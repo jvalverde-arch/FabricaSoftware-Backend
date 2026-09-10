@@ -1,0 +1,26 @@
+# .NET
+bin/
+obj/
+artifacts/
+TestResults/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Config local y secretos — nunca al repo
+appsettings.Local.json
+appsettings.*.Local.json
+*.env
+.env*
+secrets.json
+*.pfx
+
+# Specs y contexto del proyecto — viven fuera de git
+Spec/
+Contexto*/
+
+# SO
+.DS_Store
+Thumbs.db

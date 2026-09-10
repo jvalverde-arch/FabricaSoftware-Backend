@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Application layer: IService/Service, application DTOs, validators and module contracts. References only Domain. -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

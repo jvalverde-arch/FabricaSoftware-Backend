@@ -1,0 +1,8 @@
+# Test projects: rules aimed at shipping libraries are relaxed here.
+[*.cs]
+# CA1515: xUnit requires public test classes.
+dotnet_diagnostic.CA1515.severity = none
+# CA1707: test names use underscores (Method_Scenario_ExpectedResult).
+dotnet_diagnostic.CA1707.severity = none
+# CA2007: test methods run without a synchronization context.
+dotnet_diagnostic.CA2007.severity = none

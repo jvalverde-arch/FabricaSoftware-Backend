@@ -1,0 +1,8 @@
+# Host projects (Api, AgentRuntime): rules that only make sense for libraries are relaxed here.
+[*.cs]
+# CA2007: ASP.NET Core and the generic host have no synchronization context; ConfigureAwait(false) adds noise without effect.
+dotnet_diagnostic.CA2007.severity = none
+# CA1812: hosted services, controllers and middleware are instantiated by dependency injection, not by user code.
+dotnet_diagnostic.CA1812.severity = none
+# CA1515: ASP.NET Core discovers controllers only when they are public, and integration tests need a public partial Program.
+dotnet_diagnostic.CA1515.severity = none

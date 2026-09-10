@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration tests for the Api host and the solution-wide architecture tests (both hosts are referenced so every layer is loaded). -->
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Presentation/SoftwareFactory.Api/SoftwareFactory.Api.csproj" />
+    <ProjectReference Include="../../Presentation/SoftwareFactory.AgentRuntime/SoftwareFactory.AgentRuntime.csproj" />
+  </ItemGroup>
+
+</Project>
