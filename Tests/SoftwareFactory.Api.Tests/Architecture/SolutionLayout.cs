@@ -14,6 +14,7 @@ internal static class SolutionLayout
     public const string Infrastructure = "SoftwareFactory.Infrastructure";
     public const string Api = "SoftwareFactory.Api";
     public const string AgentRuntime = "SoftwareFactory.AgentRuntime";
+    public const string AppHost = "SoftwareFactory.AppHost";
 
     /// <summary>Namespace of the Api that registers dependency injection: with <c>Program</c>, the only place allowed to see Infrastructure.</summary>
     public const string ApiComposition = "SoftwareFactory.Api.Composition";

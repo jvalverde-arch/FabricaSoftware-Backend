@@ -5,7 +5,7 @@ namespace SoftwareFactory.Api.Tests.Architecture;
 /// <summary>
 /// Dependency rule at the project level, read from the csproj files (estandar-backend.md §1):
 /// Domain references nobody, Application only Domain, Infrastructure and the hosts only Application (and Domain);
-/// the hosts also reference Infrastructure because composition (DI) lives in them.
+/// the hosts also reference Infrastructure because composition (DI) lives in them; the Aspire AppHost only orchestrates the two hosts.
 /// </summary>
 public sealed class ProjectReferenceTests
 {
@@ -21,6 +21,7 @@ public sealed class ProjectReferenceTests
     [InlineData(SolutionLayout.Infrastructure, SolutionLayout.Domain, SolutionLayout.Application)]
     [InlineData(SolutionLayout.Api, SolutionLayout.Domain, SolutionLayout.Application, SolutionLayout.Infrastructure)]
     [InlineData(SolutionLayout.AgentRuntime, SolutionLayout.Domain, SolutionLayout.Application, SolutionLayout.Infrastructure)]
+    [InlineData(SolutionLayout.AppHost, SolutionLayout.Api, SolutionLayout.AgentRuntime)]
     public void Project_references_only_allowed_projects(string project, params string[] allowed)
     {
         var references = ProjectReferencesOf(project);

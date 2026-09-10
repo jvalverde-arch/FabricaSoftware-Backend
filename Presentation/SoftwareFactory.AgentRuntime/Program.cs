@@ -1,5 +1,9 @@
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-var host = builder.Build();
+builder.Services.AddHealthChecks();
 
-host.Run();
+var app = builder.Build();
+
+app.MapHealthChecks("/health");
+
+app.Run();

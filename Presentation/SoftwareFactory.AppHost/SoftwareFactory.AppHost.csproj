@@ -1,0 +1,23 @@
+<Project Sdk="Aspire.AppHost.Sdk">
+
+  <!-- Aspire orchestration for local development: Postgres (pgvector), MinIO, Api and AgentRuntime. Not deployed. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>softwarefactory-apphost</UserSecretsId>
+    <!-- Dashboard and DCP come as NuGet packages (AspireUseCliBundle=false) so nobody needs the Aspire CLI installed; ASPIRE010 only advertises the bundle. -->
+    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SoftwareFactory.Api/SoftwareFactory.Api.csproj" />
+    <ProjectReference Include="../SoftwareFactory.AgentRuntime/SoftwareFactory.AgentRuntime.csproj" />
+  </ItemGroup>
+
+</Project>
