@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Presentation host: controllers, request/response contracts, auth and middleware. Composition root for DI. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
+    <ProjectReference Include="../../Application/SoftwareFactory.Application/SoftwareFactory.Application.csproj" />
+    <ProjectReference Include="../../Infrastructure/SoftwareFactory.Infrastructure/SoftwareFactory.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

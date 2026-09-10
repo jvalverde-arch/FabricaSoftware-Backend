@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain layer: entities, enums, domain events and repository interfaces. References nothing. -->
+
+</Project>

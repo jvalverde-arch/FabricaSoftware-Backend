@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Infrastructure layer: EF Core, repositories and external adapters (LLM, blob, vault, job queue). -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
+    <ProjectReference Include="../../Application/SoftwareFactory.Application/SoftwareFactory.Application.csproj" />
+  </ItemGroup>
+
+</Project>

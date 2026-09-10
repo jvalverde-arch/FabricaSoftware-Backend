@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <!-- Worker host (Microsoft Agent Framework): consumes jobs through the same Application services the Api uses. Composition root for DI. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Agents.AI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
+    <ProjectReference Include="../../Application/SoftwareFactory.Application/SoftwareFactory.Application.csproj" />
+    <ProjectReference Include="../../Infrastructure/SoftwareFactory.Infrastructure/SoftwareFactory.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
