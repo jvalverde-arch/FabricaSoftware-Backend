@@ -5,8 +5,10 @@ COPY . .
 RUN dotnet restore SoftwareFactory.sln
 RUN dotnet publish Presentation/SoftwareFactory.AgentRuntime/SoftwareFactory.AgentRuntime.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 USER app
 ENTRYPOINT ["dotnet", "SoftwareFactory.AgentRuntime.dll"]
