@@ -20,7 +20,7 @@ Los módulos funcionales (Traceability, Brain, Project, FunctionalDesign, Archit
 - `Directory.Build.props`: nullable, warnings-as-errors, analizadores .NET en modo `All`, estilo de código aplicado en build.
 - `Directory.Packages.props`: gestión centralizada de versiones de paquetes.
 - `.editorconfig`: convenciones estrictas; las excepciones por carpeta viven en `Presentation/.editorconfig` y `Tests/.editorconfig`.
-- Los tests de arquitectura (`Tests/SoftwareFactory.Api.Tests/Architecture`) verifican la regla de dependencias entre capas y el aislamiento entre módulos.
+- Los tests de arquitectura (`Tests/SoftwareFactory.Api.Tests/Architecture`) verifican la regla de dependencias entre capas, el aislamiento entre módulos y la composición del Api: solo `Program` y el namespace `SoftwareFactory.Api.Composition` (registro de DI) pueden ver Infrastructure; los controllers (`SoftwareFactory.Api.Controllers`) solo dependen de Application.
 
 ## Comandos
 
