@@ -25,9 +25,13 @@ internal static class SolutionLayout
     /// <summary>Sub-namespace of an Application module that holds its public contracts: the only door between modules.</summary>
     public const string ContractsSegment = "Contracts";
 
-    /// <summary>Functional modules that live as namespaces inside Domain and Application (sprint-00, T-001).</summary>
+    /// <summary>
+    /// Modules that live as namespaces inside Domain and Application: the functional spaces of sprint-00 T-001 plus
+    /// Platform (E1: tenants, users, roles and the agent job queue). Common is the shared kernel, not a module.
+    /// </summary>
     public static IReadOnlyList<string> Modules { get; } =
     [
+        "Platform",
         "Traceability",
         "Brain",
         "Project",

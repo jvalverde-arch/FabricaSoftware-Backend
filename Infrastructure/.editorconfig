@@ -1,0 +1,4 @@
+# Infrastructure: rules that clash with framework-driven instantiation are relaxed here.
+[*.cs]
+# CA1812: entity configurations, interceptors, hosted services and options are instantiated by EF Core or dependency injection.
+dotnet_diagnostic.CA1812.severity = none

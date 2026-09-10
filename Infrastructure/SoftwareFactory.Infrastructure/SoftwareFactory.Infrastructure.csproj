@@ -2,6 +2,26 @@
 
   <!-- Infrastructure layer: EF Core, repositories and external adapters (LLM, blob, vault, job queue). -->
 
+  <PropertyGroup>
+    <!-- Lets dotnet-ef use this library as startup project (design-time factory) for migrations. -->
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core pinned explicitly so every project resolves the same patch version (the provider references an older one). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
     <ProjectReference Include="../../Application/SoftwareFactory.Application/SoftwareFactory.Application.csproj" />

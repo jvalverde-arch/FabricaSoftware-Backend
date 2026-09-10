@@ -15,7 +15,7 @@ Backend de la fábrica de software agentizada: .NET 10, Clean Architecture, solu
 | `infra/` | `docker-compose.yml` | Postgres + MinIO para quien no usa Aspire. Credenciales en `infra/.env` (ignorado), plantilla en `infra/.env.example`. |
 | `Tests/` | `SoftwareFactory.*.Tests` | Pruebas por capa; `Api.Tests` contiene además los tests de arquitectura. |
 
-Los módulos funcionales (Traceability, Brain, Project, FunctionalDesign, Architecture, Testing, Construction, Finops) son namespaces dentro de Domain y Application y se comunican únicamente a través de `SoftwareFactory.Application.<Módulo>.Contracts`.
+Los módulos funcionales (Traceability, Brain, Project, FunctionalDesign, Architecture, Testing, Construction, Finops) más Platform (E1: tenants, usuarios, roles y cola de jobs) son namespaces dentro de Domain y Application y se comunican únicamente a través de `SoftwareFactory.Application.<Módulo>.Contracts`. `Common` es el núcleo compartido (entidad base, `AuthorType`, `Role`).
 
 ## Reglas de compilación
 
@@ -28,7 +28,24 @@ Los módulos funcionales (Traceability, Brain, Project, FunctionalDesign, Archit
 
 ```bash
 dotnet build SoftwareFactory.sln -c Release
-dotnet test SoftwareFactory.sln -c Release
+dotnet test SoftwareFactory.sln -c Release      # las pruebas de integración levantan Postgres con Testcontainers (requiere Docker)
+```
+
+## Base de datos
+
+- **Esquema**: 12 tablas en snake_case singular (`tenant`, `app_user`, `user_role`, `project`, `artifact`, `artifact_version`, `relation`, `decision`, `job`, `llm_call`, `source_document`, `chunk`), PK `uuid` v7 generada en la app, `timestamptz`, enums como `text` con check constraint, JSONB para contenido flexible, `vector(1536)` con índice HNSW en `chunk`, `xmin` como token de concurrencia optimista.
+- **Aislamiento por tenant**: todas las tablas tienen `ENABLE` + `FORCE ROW LEVEL SECURITY` con la política `tenant_isolation` sobre `tenant_id` (la tabla `tenant` sobre `id`). La sesión declara su tenant con `set_config('app.tenant_id', ...)`; lo hace un interceptor de EF al abrir cada conexión a partir de `ITenantContext`. Sin tenant no se ve ninguna fila.
+- **Roles**: la migración crea el rol de grupo `softwarefactory_app` (sin login, sin `BYPASSRLS`) con los grants. La aplicación se conecta con un rol de login miembro de ese grupo (`Database:AppRoleName`, por defecto `softwarefactory_app_user`); el superusuario solo migra y siembra.
+- **Conexiones**: `ConnectionStrings:softwarefactory-admin` (propietario; solo Development) y `ConnectionStrings:softwarefactory` (aplicación). Si la segunda no se configura, se deriva de la primera con las credenciales del rol de aplicación.
+- **Arranque en Development**: el Api migra, aprovisiona el rol de login (contraseña `Database:AppRolePassword`, o generada por corrida) y siembra el tenant «local» con el admin `admin@local` si `Seed:AdminPassword` está configurado. Aspire inyecta todo esto solo; sin Aspire, copia `Presentation/SoftwareFactory.Api/appsettings.Local.example.json` a `appsettings.Local.json` (ignorado por git) o usa `dotnet user-secrets`.
+- **Contraseñas**: Argon2id en formato PHC (`$argon2id$v=19$m=...,t=...,p=...$salt$hash`), parámetros en la sección `Argon2` de `appsettings.json`; la verificación lee los parámetros del propio hash.
+- **Migraciones** (herramienta local `dotnet-ef` en el manifiesto del repo):
+
+```bash
+dotnet tool restore
+dotnet build Infrastructure/SoftwareFactory.Infrastructure -c Release
+dotnet ef migrations add <Nombre> --project Infrastructure/SoftwareFactory.Infrastructure --startup-project Infrastructure/SoftwareFactory.Infrastructure --output-dir Persistence/Migrations --no-build --configuration Release
+dotnet ef migrations script --project Infrastructure/SoftwareFactory.Infrastructure --startup-project Infrastructure/SoftwareFactory.Infrastructure --no-build --configuration Release --idempotent
 ```
 
 ## Arranque local
