@@ -8,6 +8,12 @@ namespace SoftwareFactory.Domain.Platform;
 /// </summary>
 public sealed class AppUser : TenantScopedEntity
 {
+    public const int LockoutThreshold = 5;
+
+    public static readonly TimeSpan BaseLockout = TimeSpan.FromMinutes(1);
+
+    public static readonly TimeSpan MaxLockout = TimeSpan.FromDays(1);
+
     private AppUser()
     {
     }
@@ -62,22 +68,34 @@ public sealed class AppUser : TenantScopedEntity
         Touch();
     }
 
-    public void RecordFailedAccess()
+    /// <summary>
+    /// Registers a failed sign-in. Every <see cref="LockoutThreshold"/> consecutive failures lock the account, starting at
+    /// <see cref="BaseLockout"/> and doubling with each further block, capped at <see cref="MaxLockout"/> (estandar-auth.md §2).
+    /// Returns the new lockout end when this failure triggered a lock; otherwise null.
+    /// </summary>
+    public DateTimeOffset? RecordFailedAccess(DateTimeOffset now)
     {
         FailedAccessCount++;
         Touch();
+
+        if (FailedAccessCount % LockoutThreshold != 0)
+        {
+            return null;
+        }
+
+        var blocks = FailedAccessCount / LockoutThreshold;
+        var exponent = Math.Min(blocks - 1, 30);
+        var duration = BaseLockout * Math.Pow(2, exponent);
+        LockoutEnd = now.ToUniversalTime().Add(duration > MaxLockout ? MaxLockout : duration);
+        return LockoutEnd;
     }
+
+    public bool IsLockedOut(DateTimeOffset now) => LockoutEnd is { } end && end > now;
 
     public void ResetFailedAccess()
     {
         FailedAccessCount = 0;
         LockoutEnd = null;
-        Touch();
-    }
-
-    public void LockUntil(DateTimeOffset lockoutEnd)
-    {
-        LockoutEnd = lockoutEnd.ToUniversalTime();
         Touch();
     }
 
