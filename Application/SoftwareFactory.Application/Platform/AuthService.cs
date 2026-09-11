@@ -24,16 +24,17 @@ public sealed class AuthService(
     IAccessTokenIssuer accessTokens,
     ITenantContextWriter tenantContext,
     ICurrentUser currentUser,
+    IClientContext clientContext,
     IValidator<LoginCommand> loginValidator,
     IValidator<ChangePasswordCommand> changePasswordValidator,
     IOptions<AuthOptions> options,
     TimeProvider clock,
     ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<AuthSession?> LoginAsync(LoginCommand command, AuditClient client, CancellationToken cancellationToken)
+    public async Task<AuthSession?> LoginAsync(LoginCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(client);
+        var client = clientContext.Client;
         await loginValidator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
 
         var candidates = await users.FindLoginCandidatesAsync(AppUser.Normalize(command.Email), cancellationToken).ConfigureAwait(false);
@@ -89,9 +90,9 @@ public sealed class AuthService(
         return session;
     }
 
-    public async Task<AuthSession?> RefreshAsync(string refreshToken, AuditClient client, CancellationToken cancellationToken)
+    public async Task<AuthSession?> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(client);
+        var client = clientContext.Client;
         var now = clock.GetUtcNow();
         var current = await FindPresentedTokenAsync(refreshToken, cancellationToken).ConfigureAwait(false);
 
@@ -130,9 +131,9 @@ public sealed class AuthService(
         return session;
     }
 
-    public async Task LogoutAsync(string? refreshToken, AuditClient client, CancellationToken cancellationToken)
+    public async Task LogoutAsync(string? refreshToken, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(client);
+        var client = clientContext.Client;
         var current = await FindPresentedTokenAsync(refreshToken, cancellationToken).ConfigureAwait(false);
 
         if (current is null)
@@ -146,10 +147,10 @@ public sealed class AuthService(
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<PasswordChangeError>> ChangePasswordAsync(ChangePasswordCommand command, AuditClient client, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PasswordChangeError>> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(client);
+        var client = clientContext.Client;
         await changePasswordValidator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
 
         var user = await users.GetAsync(currentUser.UserId, cancellationToken).ConfigureAwait(false)
@@ -178,7 +179,7 @@ public sealed class AuthService(
 
         var user = await users.GetAsync(currentUser.UserId, cancellationToken).ConfigureAwait(false);
 
-        return user is null ? null : new SessionUser(user.Id, user.TenantId, user.Email, user.DisplayName, await users.GetRolesAsync(user.Id, cancellationToken).ConfigureAwait(false));
+        return user is null ? null : new SessionUser(user.Id, user.TenantId, user.Email, user.DisplayName, await RoleNamesOfAsync(user.Id, cancellationToken).ConfigureAwait(false));
     }
 
     private static string Details(string key, string value) => $$"""{"{{key}}":"{{value}}"}""";
@@ -201,6 +202,9 @@ public sealed class AuthService(
         return await refreshTokens.FindByHashAsync(RefreshTokenSecret.ComputeHash(secret), cancellationToken).ConfigureAwait(false);
     }
 
+    private async Task<IReadOnlyCollection<string>> RoleNamesOfAsync(Guid userId, CancellationToken cancellationToken) =>
+        [.. (await users.GetRolesAsync(userId, cancellationToken).ConfigureAwait(false)).Select(RoleNames.Of)];
+
     private async Task<AuthSession> IssueSessionAsync(AppUser user, RefreshToken token, RefreshTokenSecret secret, CancellationToken cancellationToken)
     {
         refreshTokens.Add(token);
@@ -212,6 +216,6 @@ public sealed class AuthService(
             access.ExpiresAt,
             RefreshCookieValue.Compose(user.TenantId, secret),
             token.ExpiresAt,
-            new SessionUser(user.Id, user.TenantId, user.Email, user.DisplayName, roles));
+            new SessionUser(user.Id, user.TenantId, user.Email, user.DisplayName, [.. roles.Select(RoleNames.Of)]));
     }
 }

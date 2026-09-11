@@ -18,7 +18,7 @@ public sealed class AuthServiceLoginTests
         Assert.Equal(harness.Tenant.Id, harness.TenantWriter.TenantId);
         Assert.Equal(harness.User.Id, session.User.Id);
         Assert.Equal(harness.Tenant.Id, session.User.TenantId);
-        Assert.Equal([Role.Functional], session.User.Roles);
+        Assert.Equal(["functional"], session.User.Roles);
         Assert.StartsWith($"access:{harness.User.Id}:", session.AccessToken, StringComparison.Ordinal);
         Assert.Equal(AuthServiceHarness.Start.AddMinutes(15), session.AccessTokenExpiresAt);
         Assert.Equal(AuthServiceHarness.Start.AddDays(14), session.RefreshTokenExpiresAt);
@@ -155,6 +155,6 @@ public sealed class AuthServiceLoginTests
     {
         var harness = new AuthServiceHarness();
 
-        await Assert.ThrowsAsync<ValidationException>(() => harness.Service.LoginAsync(new LoginCommand(email, password), harness.Client, CancellationToken.None));
+        await Assert.ThrowsAsync<ValidationException>(() => harness.Service.LoginAsync(new LoginCommand(email, password), CancellationToken.None));
     }
 }

@@ -32,6 +32,7 @@ internal sealed class AuthServiceHarness
             new FakeAccessTokenIssuer(Clock),
             TenantWriter,
             CurrentUser,
+            new FakeClientContext(Client),
             new LoginCommandValidator(),
             new ChangePasswordCommandValidator(Options.Create(new AuthOptions())),
             Options.Create(new AuthOptions()),
@@ -72,5 +73,5 @@ internal sealed class AuthServiceHarness
     }
 
     public Task<AuthSession?> LoginAsync(string email = Email, string password = Password) =>
-        Service.LoginAsync(new LoginCommand(email, password), Client, CancellationToken.None);
+        Service.LoginAsync(new LoginCommand(email, password), CancellationToken.None);
 }

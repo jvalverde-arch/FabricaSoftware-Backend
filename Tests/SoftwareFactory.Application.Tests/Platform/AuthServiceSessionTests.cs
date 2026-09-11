@@ -13,7 +13,7 @@ public sealed class AuthServiceSessionTests
         var first = await harness.LoginAsync();
         harness.Clock.Advance(TimeSpan.FromDays(3));
 
-        var second = await harness.Service.RefreshAsync(first!.RefreshToken, harness.Client, CancellationToken.None);
+        var second = await harness.Service.RefreshAsync(first!.RefreshToken, CancellationToken.None);
 
         Assert.NotNull(second);
         Assert.NotEqual(first.RefreshToken, second.RefreshToken);
@@ -35,13 +35,13 @@ public sealed class AuthServiceSessionTests
     {
         var harness = new AuthServiceHarness();
         var first = await harness.LoginAsync();
-        var second = await harness.Service.RefreshAsync(first!.RefreshToken, harness.Client, CancellationToken.None);
+        var second = await harness.Service.RefreshAsync(first!.RefreshToken, CancellationToken.None);
 
-        var reused = await harness.Service.RefreshAsync(first.RefreshToken, harness.Client, CancellationToken.None);
+        var reused = await harness.Service.RefreshAsync(first.RefreshToken, CancellationToken.None);
 
         Assert.Null(reused);
         Assert.All(harness.RefreshTokens.Tokens, token => Assert.NotNull(token.RevokedAt));
-        Assert.Null(await harness.Service.RefreshAsync(second!.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(second!.RefreshToken, CancellationToken.None));
         var audit = Assert.Single(harness.Audit.Events, e => e.Action == AuditAction.RefreshReuseDetected);
         Assert.Equal(harness.User.Id, audit.ActorId);
     }
@@ -52,11 +52,11 @@ public sealed class AuthServiceSessionTests
         var harness = new AuthServiceHarness();
         var session = await harness.LoginAsync();
 
-        Assert.Null(await harness.Service.RefreshAsync("garbage", harness.Client, CancellationToken.None));
-        Assert.Null(await harness.Service.RefreshAsync($"{harness.Tenant.Id:N}.{RefreshTokenSecret.Generate().Value}", harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync("garbage", CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync($"{harness.Tenant.Id:N}.{RefreshTokenSecret.Generate().Value}", CancellationToken.None));
 
         harness.Clock.Advance(TimeSpan.FromDays(14));
-        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, CancellationToken.None));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class AuthServiceSessionTests
         var session = await harness.LoginAsync();
         harness.User.Deactivate();
 
-        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, CancellationToken.None));
     }
 
     [Fact]
@@ -75,10 +75,10 @@ public sealed class AuthServiceSessionTests
         var harness = new AuthServiceHarness();
         var session = await harness.LoginAsync();
 
-        await harness.Service.LogoutAsync(session!.RefreshToken, harness.Client, CancellationToken.None);
+        await harness.Service.LogoutAsync(session!.RefreshToken, CancellationToken.None);
 
         Assert.All(harness.RefreshTokens.Tokens, token => Assert.NotNull(token.RevokedAt));
-        Assert.Null(await harness.Service.RefreshAsync(session.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(session.RefreshToken, CancellationToken.None));
         var audit = Assert.Single(harness.Audit.Events, e => e.Action == AuditAction.Logout);
         Assert.Equal(harness.User.Id, audit.ActorId);
     }
@@ -88,8 +88,8 @@ public sealed class AuthServiceSessionTests
     {
         var harness = new AuthServiceHarness();
 
-        await harness.Service.LogoutAsync(null, harness.Client, CancellationToken.None);
-        await harness.Service.LogoutAsync("garbage", harness.Client, CancellationToken.None);
+        await harness.Service.LogoutAsync(null, CancellationToken.None);
+        await harness.Service.LogoutAsync("garbage", CancellationToken.None);
 
         Assert.Empty(harness.Audit.Events);
     }
@@ -101,10 +101,10 @@ public sealed class AuthServiceSessionTests
         var session = await harness.LoginAsync();
         harness.CurrentUser.SignIn(harness.User.Id, harness.Tenant.Id, Role.Functional);
 
-        var errors = await harness.Service.ChangePasswordAsync(new ChangePasswordCommand("not-the-password", "a-brand-new-password"), harness.Client, CancellationToken.None);
+        var errors = await harness.Service.ChangePasswordAsync(new ChangePasswordCommand("not-the-password", "a-brand-new-password"), CancellationToken.None);
 
         Assert.Equal([Common.Security.PasswordChangeError.IncorrectCurrentPassword], errors);
-        Assert.NotNull(await harness.Service.RefreshAsync(session!.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.NotNull(await harness.Service.RefreshAsync(session!.RefreshToken, CancellationToken.None));
     }
 
     [Fact]
@@ -115,11 +115,11 @@ public sealed class AuthServiceSessionTests
         var otherDevice = await harness.LoginAsync();
         harness.CurrentUser.SignIn(harness.User.Id, harness.Tenant.Id, Role.Functional);
 
-        var errors = await harness.Service.ChangePasswordAsync(new ChangePasswordCommand(AuthServiceHarness.Password, "a-brand-new-password"), harness.Client, CancellationToken.None);
+        var errors = await harness.Service.ChangePasswordAsync(new ChangePasswordCommand(AuthServiceHarness.Password, "a-brand-new-password"), CancellationToken.None);
 
         Assert.Empty(errors);
-        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, harness.Client, CancellationToken.None));
-        Assert.Null(await harness.Service.RefreshAsync(otherDevice!.RefreshToken, harness.Client, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(session!.RefreshToken, CancellationToken.None));
+        Assert.Null(await harness.Service.RefreshAsync(otherDevice!.RefreshToken, CancellationToken.None));
         Assert.Single(harness.Audit.Events, e => e.Action == AuditAction.PasswordChanged);
         Assert.NotNull(await harness.LoginAsync(password: "a-brand-new-password"));
     }
@@ -137,6 +137,6 @@ public sealed class AuthServiceSessionTests
         Assert.NotNull(me);
         Assert.Equal(harness.User.Id, me.Id);
         Assert.Equal(AuthServiceHarness.Email, me.Email);
-        Assert.Equal([Role.Functional], me.Roles);
+        Assert.Equal(["functional"], me.Roles);
     }
 }

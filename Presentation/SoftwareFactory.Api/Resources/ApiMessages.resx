@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AuthenticationFailedTitle" xml:space="preserve"><value>No autenticado</value></data>
+  <data name="InvalidCredentials" xml:space="preserve"><value>Credenciales inválidas.</value></data>
+  <data name="InvalidSession" xml:space="preserve"><value>La sesión no es válida o ha expirado. Inicie sesión de nuevo.</value></data>
+  <data name="PasswordChangeFailedTitle" xml:space="preserve"><value>No se pudo cambiar la contraseña</value></data>
+  <data name="IncorrectCurrentPassword" xml:space="preserve"><value>La contraseña actual no es correcta.</value></data>
+  <data name="PasswordTooShort" xml:space="preserve"><value>La contraseña debe tener al menos {0} caracteres.</value></data>
+  <data name="PasswordTooCommon" xml:space="preserve"><value>La contraseña es demasiado común.</value></data>
+  <data name="ValidationFailedTitle" xml:space="preserve"><value>La solicitud no es válida.</value></data>
+  <data name="TooManyRequestsTitle" xml:space="preserve"><value>Límite de solicitudes excedido</value></data>
+  <data name="TooManyRequests" xml:space="preserve"><value>Demasiadas solicitudes. Inténtelo de nuevo más tarde.</value></data>
+</root>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
+using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Platform;
 using SoftwareFactory.Infrastructure.Security.Jwt;
@@ -36,6 +37,8 @@ public sealed class JwtAccessTokenIssuerTests
 
         var parsed = new JsonWebToken(token.Value);
         Assert.Equal("2026-09", parsed.Kid);
+        Assert.Equal(32, parsed.Id.Length);
+        Assert.NotEqual(parsed.Id, new JsonWebToken(issuer.Issue(user, [Role.Reader]).Value).Id);
         Assert.Equal(user.Id.ToString("D"), parsed.Subject);
         Assert.Equal(user.TenantId.ToString("D"), parsed.GetClaim(AuthClaims.TenantId).Value);
         Assert.Equal("Test user", parsed.GetClaim(AuthClaims.Name).Value);

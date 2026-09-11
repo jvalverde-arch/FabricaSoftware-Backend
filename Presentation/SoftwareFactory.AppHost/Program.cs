@@ -19,6 +19,12 @@ var seedAdminPassword = builder.AddParameter(
     secret: true,
     persist: true);
 
+var jwtSigningKey = builder.AddParameter(
+    "jwt-signing-key",
+    new GenerateParameterDefault { MinLength = 48, Special = false },
+    secret: true,
+    persist: true);
+
 var minioRootUser = builder.AddParameter("minio-root-user", "minioadmin");
 var minioRootPassword = builder.AddParameter(
     "minio-root-password",
@@ -41,6 +47,7 @@ builder.AddProject<Projects.SoftwareFactory_Api>("api", launchProfileName: "http
     .WithReference(database, connectionName: "softwarefactory-admin")
     .WithEnvironment("Database__AppRolePassword", dbAppPassword)
     .WithEnvironment("Seed__AdminPassword", seedAdminPassword)
+    .WithEnvironment("Jwt__SigningKeys__0__Secret", jwtSigningKey)
     .WaitFor(database)
     .WaitFor(minio)
     .WithHttpHealthCheck("/health", endpointName: "https")

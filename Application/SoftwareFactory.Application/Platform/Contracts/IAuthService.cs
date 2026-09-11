@@ -1,5 +1,4 @@
 using SoftwareFactory.Application.Common.Security;
-using SoftwareFactory.Domain.Platform;
 
 namespace SoftwareFactory.Application.Platform.Contracts;
 
@@ -7,16 +6,16 @@ namespace SoftwareFactory.Application.Platform.Contracts;
 public interface IAuthService
 {
     /// <summary>Email + password → session, or null for unknown user, wrong password, lockout or inactive account/tenant.</summary>
-    Task<AuthSession?> LoginAsync(LoginCommand command, AuditClient client, CancellationToken cancellationToken);
+    Task<AuthSession?> LoginAsync(LoginCommand command, CancellationToken cancellationToken);
 
     /// <summary>Rotates the refresh token and issues a new pair, or null when the token is unknown, expired, revoked or reused.</summary>
-    Task<AuthSession?> RefreshAsync(string refreshToken, AuditClient client, CancellationToken cancellationToken);
+    Task<AuthSession?> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
 
     /// <summary>Revokes the session family the refresh token belongs to. Idempotent.</summary>
-    Task LogoutAsync(string? refreshToken, AuditClient client, CancellationToken cancellationToken);
+    Task LogoutAsync(string? refreshToken, CancellationToken cancellationToken);
 
     /// <summary>Changes the password of the current user and revokes every session.</summary>
-    Task<IReadOnlyList<PasswordChangeError>> ChangePasswordAsync(ChangePasswordCommand command, AuditClient client, CancellationToken cancellationToken);
+    Task<IReadOnlyList<PasswordChangeError>> ChangePasswordAsync(ChangePasswordCommand command, CancellationToken cancellationToken);
 
     Task<SessionUser?> GetCurrentUserAsync(CancellationToken cancellationToken);
 }

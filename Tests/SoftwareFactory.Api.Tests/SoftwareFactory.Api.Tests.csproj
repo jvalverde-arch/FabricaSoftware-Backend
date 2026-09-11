@@ -4,6 +4,8 @@
 
   <ItemGroup>
     <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>

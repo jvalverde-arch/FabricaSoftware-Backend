@@ -4,11 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Platform;
-using SoftwareFactory.Infrastructure.Persistence.Conventions;
 
 namespace SoftwareFactory.Infrastructure.Security.Jwt;
 
-/// <summary>Issues the platform access token: sub, tenant_id, roles (snake_case), name; signed with the active key.</summary>
+/// <summary>Issues the platform access token: jti, sub, tenant_id, roles, name; signed with the active key.</summary>
 internal sealed class JwtAccessTokenIssuer(IOptions<JwtOptions> options, TimeProvider clock) : IAccessTokenIssuer
 {
     private readonly JsonWebTokenHandler _handler = new() { SetDefaultTimesOnTokenCreation = false };
@@ -32,10 +31,11 @@ internal sealed class JwtAccessTokenIssuer(IOptions<JwtOptions> options, TimePro
             SigningCredentials = new SigningCredentials(JwtTokenValidation.ToSecurityKey(settings.ActiveKey), SecurityAlgorithms.HmacSha256),
             Claims = new Dictionary<string, object>(StringComparer.Ordinal)
             {
+                [AuthClaims.TokenId] = Guid.CreateVersion7().ToString("N"),
                 [AuthClaims.Subject] = user.Id.ToString("D"),
                 [AuthClaims.TenantId] = user.TenantId.ToString("D"),
                 [AuthClaims.Name] = user.DisplayName,
-                [AuthClaims.Roles] = roles.Select(EnumText<Role>.ToText).ToArray(),
+                [AuthClaims.Roles] = roles.Select(RoleNames.Of).ToArray(),
             },
         };
 
