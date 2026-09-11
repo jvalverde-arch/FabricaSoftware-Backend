@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SoftwareFactory.Domain.Brain;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Finops;
@@ -5,17 +6,26 @@ using SoftwareFactory.Domain.Platform;
 using SoftwareFactory.Domain.Project;
 using SoftwareFactory.Domain.Traceability;
 using SoftwareFactory.Infrastructure.Persistence;
+using SoftwareFactory.Infrastructure.Security;
 
 namespace SoftwareFactory.Infrastructure.Tests.Persistence;
 
-/// <summary>Arranges one row (two for artifact) in every table for a fresh tenant, through the owner connection.</summary>
+/// <summary>Arranges one row (two for artifact) in every table for a fresh tenant, through the owner connection. The probe user signs in with <see cref="Password"/>.</summary>
 internal static class TenantGraph
 {
-    public static async Task<Guid> CreateAsync(SoftwareFactoryDbContext admin)
+    public const string Password = "Probe-Password-2026!";
+
+    /// <summary>Argon2id (m=8192, t=2, p=1) hash of <see cref="Password"/>, so the probe user can actually sign in.</summary>
+    public static string PasswordHash { get; } =
+        new Argon2PasswordHasher(Options.Create(new Argon2Options { MemoryKiB = 8192, Iterations = 2, Parallelism = 1 })).Hash(Password);
+
+    public static string EmailOf(string slug) => $"user@{slug}.test";
+
+    public static async Task<Guid> CreateAsync(SoftwareFactoryDbContext admin, string? slug = null)
     {
-        var slug = "t-" + Guid.NewGuid().ToString("N");
+        slug ??= "t-" + Guid.NewGuid().ToString("N");
         var tenant = new Tenant($"Tenant {slug}", slug);
-        var user = new AppUser(tenant.Id, $"user@{slug}.test", "Test user", "$argon2id$v=19$m=8,t=1,p=1$c2FsdHNhbHRzYWx0c2FsdA$aGFzaA");
+        var user = new AppUser(tenant.Id, EmailOf(slug), "Test user", PasswordHash);
         var role = new UserRole(tenant.Id, user.Id, Role.Functional);
         var project = new SoftwareProject(tenant.Id, $"Project {slug}", "Probe project");
         var story = new Artifact(tenant.Id, project.Id, "user_story", "As a user", ArtifactLevel.Project);
@@ -28,8 +38,10 @@ internal static class TenantGraph
         var document = new SourceDocument(tenant.Id, "Norma", "text/plain", $"{slug}/norma.txt", 42, "https://example.test/norma");
         var chunk = new Chunk(tenant.Id, document.Id, 0, "Texto del fragmento", "p. 1");
         chunk.SetEmbedding(Embedding(0.25f));
+        var refreshToken = RefreshToken.StartFamily(tenant.Id, user.Id, RefreshTokenSecret.Generate().Hash, DateTimeOffset.UtcNow, TimeSpan.FromDays(14));
+        var auditEvent = new AuditEvent(tenant.Id, AuditAction.LoginSucceeded, AuthorType.Human, user.Id, new AuditClient("127.0.0.1", "probe"), DateTimeOffset.UtcNow);
 
-        admin.AddRange(tenant, user, role, project, story, testCase, version, relation, decision, job, call, document, chunk);
+        admin.AddRange(tenant, user, role, project, story, testCase, version, relation, decision, job, call, document, chunk, refreshToken, auditEvent);
         await admin.SaveChangesAsync();
 
         return tenant.Id;

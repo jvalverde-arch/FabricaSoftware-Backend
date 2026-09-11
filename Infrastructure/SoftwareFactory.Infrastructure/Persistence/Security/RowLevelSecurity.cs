@@ -12,14 +12,21 @@ namespace SoftwareFactory.Infrastructure.Persistence.Security;
 internal static class RowLevelSecurity
 {
     public const string TenantSetting = "app.tenant_id";
+
+    /// <summary>Session setting read by the <see cref="LoginLookupPolicyName"/> policy: the one email a tenant-less session may look up.</summary>
+    public const string LoginEmailSetting = "app.login_email";
+    public const string LoginLookupPolicyName = "login_lookup";
+    public const string UserTable = "app_user";
+    public const string AuditTable = "audit_event";
     public const string ApplicationRole = "softwarefactory_app";
     public const string TenantTable = "tenant";
     public const string PolicyName = "tenant_isolation";
     public const string CurrentTenantFunction = "app_current_tenant_id";
 
-    public static IReadOnlyList<string> TenantScopedTables { get; } =
+    /// <summary>Tenant-scoped tables of the initial schema (T-003). Frozen: the InitialSchema migration iterates this list.</summary>
+    public static IReadOnlyList<string> InitialTenantScopedTables { get; } =
     [
-        "app_user",
+        UserTable,
         "user_role",
         "project",
         "artifact",
@@ -31,6 +38,11 @@ internal static class RowLevelSecurity
         "source_document",
         "chunk",
     ];
+
+    /// <summary>Tables added by the authentication migration (T-004). Frozen for the same reason.</summary>
+    public static IReadOnlyList<string> AuthTables { get; } = ["refresh_token", AuditTable];
+
+    public static IReadOnlyList<string> TenantScopedTables { get; } = [.. InitialTenantScopedTables, .. AuthTables];
 
     public static IReadOnlyList<string> AllTables { get; } = [TenantTable, .. TenantScopedTables];
 
@@ -59,7 +71,7 @@ internal static class RowLevelSecurity
 
         sql.AppendLine(PolicySql(TenantTable, "id"));
 
-        foreach (var table in TenantScopedTables)
+        foreach (var table in InitialTenantScopedTables)
         {
             sql.AppendLine(PolicySql(table, "tenant_id"));
         }
@@ -71,7 +83,7 @@ internal static class RowLevelSecurity
     {
         var sql = new StringBuilder();
 
-        foreach (var table in AllTables)
+        foreach (var table in (string[])[TenantTable, .. InitialTenantScopedTables])
         {
             sql.AppendLine(CultureInfo.InvariantCulture, $"DROP POLICY IF EXISTS {PolicyName} ON {table};");
             sql.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY;");
@@ -79,6 +91,46 @@ internal static class RowLevelSecurity
         }
 
         sql.AppendLine(CultureInfo.InvariantCulture, $"DROP FUNCTION IF EXISTS {CurrentTenantFunction}();");
+        return sql.ToString();
+    }
+
+    /// <summary>
+    /// Authentication migration: isolation on the new tables, the append-only grant of the audit table, and the sign-in
+    /// lookup: a session without tenant may SELECT the app_user rows whose email equals <see cref="LoginEmailSetting"/> — the
+    /// one row a caller claims to be — and nothing else. Once a tenant is established the extra policy is inert.
+    /// </summary>
+    public static string EnableAuthSql()
+    {
+        var sql = new StringBuilder();
+
+        foreach (var table in AuthTables)
+        {
+            sql.AppendLine(PolicySql(table, "tenant_id"));
+        }
+
+        sql.AppendLine(CultureInfo.InvariantCulture, $"REVOKE UPDATE, DELETE ON {AuditTable} FROM {ApplicationRole};");
+        sql.AppendLine($"""
+            CREATE POLICY {LoginLookupPolicyName} ON {UserTable} FOR SELECT
+                USING ({CurrentTenantFunction}() IS NULL
+                       AND normalized_email = NULLIF(current_setting('{LoginEmailSetting}', true), ''));
+            """);
+
+        return sql.ToString();
+    }
+
+    public static string DisableAuthSql()
+    {
+        var sql = new StringBuilder();
+        sql.AppendLine(CultureInfo.InvariantCulture, $"DROP POLICY IF EXISTS {LoginLookupPolicyName} ON {UserTable};");
+        sql.AppendLine(CultureInfo.InvariantCulture, $"GRANT UPDATE, DELETE ON {AuditTable} TO {ApplicationRole};");
+
+        foreach (var table in AuthTables)
+        {
+            sql.AppendLine(CultureInfo.InvariantCulture, $"DROP POLICY IF EXISTS {PolicyName} ON {table};");
+            sql.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY;");
+            sql.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;");
+        }
+
         return sql.ToString();
     }
 

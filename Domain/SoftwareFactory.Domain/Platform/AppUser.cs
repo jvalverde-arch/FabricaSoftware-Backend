@@ -61,9 +61,22 @@ public sealed class AppUser : TenantScopedEntity
 
     public static string Normalize(string email) => Guard.NotBlank(email).ToUpperInvariant();
 
+    /// <summary>Credential change: the new hash plus a new security stamp, so every existing session is invalidated.</summary>
     public void ChangePasswordHash(string passwordHash)
     {
+        RehashPassword(passwordHash);
+        RotateSecurityStamp();
+    }
+
+    /// <summary>Transparent re-hash of the same password with new parameters; sessions stay valid.</summary>
+    public void RehashPassword(string passwordHash)
+    {
         PasswordHash = Guard.NotBlank(passwordHash);
+        Touch();
+    }
+
+    public void RotateSecurityStamp()
+    {
         SecurityStamp = Guid.NewGuid().ToString("N");
         Touch();
     }
@@ -102,8 +115,7 @@ public sealed class AppUser : TenantScopedEntity
     public void Deactivate()
     {
         IsActive = false;
-        SecurityStamp = Guid.NewGuid().ToString("N");
-        Touch();
+        RotateSecurityStamp();
     }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
