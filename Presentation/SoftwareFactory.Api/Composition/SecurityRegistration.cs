@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using SoftwareFactory.Api.ErrorHandling;
@@ -42,12 +43,28 @@ internal static class SecurityRegistration
         services.AddCors(cors => cors.AddDefaultPolicy(policy =>
             policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
-        services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
-            context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = CustomizeProblemDetails);
         services.AddExceptionHandler<ValidationExceptionHandler>();
         services.Configure<ApiBehaviorOptions>(options => options.InvalidModelStateResponseFactory = InvalidModelState);
 
         return services;
+    }
+
+    /// <summary>Trace id on every problem, and Spanish titles where the framework would put the English reason phrase.</summary>
+    private static void CustomizeProblemDetails(ProblemDetailsContext context)
+    {
+        var problem = context.ProblemDetails;
+        problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+        var status = problem.Status ?? context.HttpContext.Response.StatusCode;
+        var isDefaultTitle = problem.Title is null || string.Equals(problem.Title, ReasonPhrases.GetReasonPhrase(status), StringComparison.Ordinal);
+
+        if (isDefaultTitle)
+        {
+            var messages = context.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<ApiMessages>>();
+            var localized = messages[$"Status{status}Title"];
+            problem.Title = localized.ResourceNotFound ? messages["Status500Title"] : localized;
+        }
     }
 
     private static void ConfigureRateLimiter(RateLimiterOptions limiter)

@@ -14,4 +14,13 @@
   <data name="ValidationFailedTitle" xml:space="preserve"><value>La solicitud no es válida.</value></data>
   <data name="TooManyRequestsTitle" xml:space="preserve"><value>Límite de solicitudes excedido</value></data>
   <data name="TooManyRequests" xml:space="preserve"><value>Demasiadas solicitudes. Inténtelo de nuevo más tarde.</value></data>
+  <data name="Status400Title" xml:space="preserve"><value>Solicitud incorrecta</value></data>
+  <data name="Status401Title" xml:space="preserve"><value>No autenticado</value></data>
+  <data name="Status403Title" xml:space="preserve"><value>Acceso denegado</value></data>
+  <data name="Status404Title" xml:space="preserve"><value>Recurso no encontrado</value></data>
+  <data name="Status405Title" xml:space="preserve"><value>Método no permitido</value></data>
+  <data name="Status409Title" xml:space="preserve"><value>Conflicto de concurrencia</value></data>
+  <data name="Status415Title" xml:space="preserve"><value>Tipo de contenido no admitido</value></data>
+  <data name="Status429Title" xml:space="preserve"><value>Límite de solicitudes excedido</value></data>
+  <data name="Status500Title" xml:space="preserve"><value>Error interno del servidor</value></data>
 </root>

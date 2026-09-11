@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using SoftwareFactory.Application.Common.Security;
@@ -36,6 +37,7 @@ public sealed class AuthorizationTests(ApiFixture fixture)
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+                Assert.Equal("Acceso denegado", (await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>(AuthClientExtensions.Json))!.Title);
             }
         }
     }

@@ -23,6 +23,7 @@ public sealed class AuthEndpointsTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
         Assert.Equal("application/problem+json", me.Content.Headers.ContentType?.MediaType);
         Assert.Contains("Bearer", me.Headers.WwwAuthenticate.ToString(), StringComparison.Ordinal);
+        Assert.Equal("No autenticado", (await me.Content.ReadFromJsonAsync<ProblemDetails>(AuthClientExtensions.Json))!.Title);
 
         using var probe = await client.GetWithTokenAsync("/api/probe/any", accessToken: null);
         Assert.Equal(HttpStatusCode.Unauthorized, probe.StatusCode);
