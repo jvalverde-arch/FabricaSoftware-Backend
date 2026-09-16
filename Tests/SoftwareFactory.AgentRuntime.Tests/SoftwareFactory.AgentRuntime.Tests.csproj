@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Composition tests for the worker host: its object graph must build without a database behind it. -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../Presentation/SoftwareFactory.AgentRuntime/SoftwareFactory.AgentRuntime.csproj" />
+  </ItemGroup>
+
+</Project>

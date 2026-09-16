@@ -1,11 +1,13 @@
 using SoftwareFactory.Api.Composition;
 using SoftwareFactory.Api.Middleware;
 using SoftwareFactory.Api.Observability;
+using SoftwareFactory.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Local, git-ignored settings (connection strings, seed password, JWT secret) for whoever does not use Aspire or user-secrets.
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Local, git-ignored settings (connection strings, seed password, JWT secret) for whoever does not use Aspire or
+// user-secrets. They go before the environment variables, never after: see HostConfiguration.
+builder.Configuration.AddLocalSettings();
 
 builder.AddPlatformLogging();
 

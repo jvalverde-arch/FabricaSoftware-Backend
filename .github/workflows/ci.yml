@@ -98,13 +98,31 @@ jobs:
             type=raw,value=main
             type=raw,value=0.1.${{ github.run_number }}
 
-      - name: Build and push
+      # Se construye y se carga en el Docker del runner: nada se publica antes de que el guardián la revise.
+      - name: Build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          load: true
+          push: false
+          tags: ${{ matrix.image }}:candidate
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      # Guardián de secretos (estandar-backend.md §7): se comprueba la imagen, no la confianza en el .dockerignore.
+      # Las primeras imágenes publicadas llevaban dentro appsettings.Local.json; esto es lo que impide que se repita.
+      - name: Assert no secrets in the image
+        run: ./.github/scripts/assert-no-secrets-in-image.sh ${{ matrix.image }}:candidate
+
+      - name: Push
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$TAGS" | while read -r tag; do
+            [ -n "$tag" ] || continue
+            docker tag ${{ matrix.image }}:candidate "$tag"
+            docker push "$tag"
+          done
