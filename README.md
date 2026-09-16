@@ -21,7 +21,8 @@ Los módulos funcionales (Traceability, Brain, Project, FunctionalDesign, Archit
 
 ## Reglas de compilación
 
-- `Directory.Build.props`: nullable, warnings-as-errors, analizadores .NET en modo `All`, estilo de código aplicado en build.
+- `Directory.Build.props`: nullable, warnings-as-errors, analizadores .NET en modo `All` con `AnalysisLevel` **fijado** (`10.0-all`): con `latest-all` el conjunto de reglas cambiaba solo al cambiar de SDK y el mismo código compilaba aquí y fallaba dentro de la imagen. Subir el nivel es un cambio deliberado.
+- `global.json`: SDK fijado a la banda `10.0.1xx` con `rollForward: latestPatch`, y los Dockerfiles usan la etiqueta `sdk:10.0.100` de esa misma banda. Cambiar de banda es un cambio consciente en los tres lugares a la vez.
 - `Directory.Packages.props`: gestión centralizada de versiones de paquetes.
 - `.editorconfig`: convenciones estrictas; las excepciones por carpeta viven en `Presentation/.editorconfig` y `Tests/.editorconfig`.
 - Los tests de arquitectura (`Tests/SoftwareFactory.Api.Tests/Architecture`) verifican la regla de dependencias entre capas, el aislamiento entre módulos y la composición del Api: solo `Program` y el namespace `SoftwareFactory.Api.Composition` (registro de DI) pueden ver Infrastructure; los controllers (`SoftwareFactory.Api.Controllers`) solo dependen de Application.

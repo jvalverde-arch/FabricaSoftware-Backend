@@ -64,7 +64,8 @@ public sealed class LlmGateway(
         catch (Exception exception)
         {
             // A failed call costs nothing that the provider reports, so nothing is recorded; the failure is logged.
-            logger.ProviderFailed(exception, provider.Name, resolution.Model, LatencyOf(startedAt));
+            var failedAfterMs = LatencyOf(startedAt);
+            logger.ProviderFailed(exception, provider.Name, resolution.Model, failedAfterMs);
             throw;
         }
 

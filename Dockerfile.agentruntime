@@ -1,5 +1,6 @@
 # SoftwareFactory Agent Runtime — multi-stage build (.NET 10)
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# SDK pinned to the feature band of global.json; the generic 10.0 tag moves bands and changes the analyzer set.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet restore SoftwareFactory.sln

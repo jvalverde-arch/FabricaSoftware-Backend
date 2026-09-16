@@ -9,7 +9,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>9999</WarningLevel>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>latest-all</AnalysisLevel>
+    <!-- Pinned on purpose: `latest-all` moves the rule set with every new SDK, so the same source can build here and
+         fail inside a container image with a newer SDK. Raising this is a deliberate change, reviewed like any other. -->
+    <AnalysisLevel>10.0-all</AnalysisLevel>
     <AnalysisMode>All</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
