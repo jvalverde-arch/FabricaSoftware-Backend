@@ -4,6 +4,7 @@
        Hosted as a minimal web application so that /health can be probed by the orchestrator; it serves no business endpoints. -->
 
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Microsoft.Agents.AI" />
   </ItemGroup>
 

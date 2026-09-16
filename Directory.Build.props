@@ -19,6 +19,8 @@
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>
+    <!-- Excludes the real-endpoint tests from the default run; see tests.runsettings. -->
+    <RunSettingsFilePath Condition="'$(RunSettingsFilePath)' == ''">$(MSBuildThisFileDirectory)tests.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <!-- Each production project exposes internals to its own test project (SoftwareFactory.X -> SoftwareFactory.X.Tests). -->

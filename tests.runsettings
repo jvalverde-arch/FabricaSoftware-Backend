@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default test run of the solution. Tests marked Category=RealEndpoint talk to a real LLM endpoint (credentials,
+     money, network), so they stay out of this run and are launched on demand with a Category filter. -->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=RealEndpoint</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

@@ -5,12 +5,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoftwareFactory.Application.Common.Persistence;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Application.Common.Tenancy;
+using SoftwareFactory.Application.Finops.Contracts;
+using SoftwareFactory.Domain.Finops;
 using SoftwareFactory.Domain.Platform;
 using SoftwareFactory.Infrastructure.Persistence;
 using SoftwareFactory.Infrastructure.Persistence.Initialization;
 using SoftwareFactory.Infrastructure.Persistence.Options;
 using SoftwareFactory.Infrastructure.Persistence.Repositories;
 using SoftwareFactory.Infrastructure.Persistence.Tenancy;
+using SoftwareFactory.Infrastructure.Llm;
 using SoftwareFactory.Infrastructure.Security;
 using SoftwareFactory.Infrastructure.Security.Identity;
 using SoftwareFactory.Infrastructure.Security.Jwt;
@@ -30,6 +33,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOptions<Argon2Options>()
             .Bind(configuration.GetSection(Argon2Options.SectionName))
             .Validate(argon2 => argon2.IsValid(), "Argon2 parameters are out of range (memory >= 8*parallelism KiB, iterations >= 1, salt >= 8, hash >= 16).")
+            .ValidateOnStart();
+
+        services.AddOptions<LlmOptions>()
+            .Bind(configuration.GetSection(LlmOptions.SectionName))
+            .Validate(llm => llm.IsValid(), "Llm settings are incomplete: every tier needs a registered provider, a priced model and a positive output ceiling, and the budgets must be positive.")
             .ValidateOnStart();
 
         services.AddOptions<JwtOptions>()
@@ -54,11 +62,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAuditEventRepository, AuditEventRepository>();
+        services.AddScoped<ILlmCallRepository, LlmCallRepository>();
 
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
         services.AddPlatformIdentity();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
+        services.AddLlm();
 
         return services;
     }

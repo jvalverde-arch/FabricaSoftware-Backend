@@ -68,6 +68,49 @@ curl -sk -b cookies.txt -c cookies.txt -X POST https://localhost:7160/api/auth/r
 curl -sk -b cookies.txt -X POST https://localhost:7160/api/auth/logout -i
 ```
 
+## Adaptador LLM e instrumentación (T-006, doc 03 D3 y §6)
+
+- **Puerto propio**: `ILlmProvider` (Application) con dos adaptadores en Infrastructure — **Anthropic** sobre el SDK oficial (`Anthropic` 12.48.0, licencia MIT igual que sus transitivas; relevante porque viaja dentro de los contenedores self-hosted) y **OpenAI-compatible** sobre `HttpClient` plano, que cubre Azure OpenAI, vLLM y Ollama. Ningún agente ni servicio conoce al proveedor.
+- **Selección por configuración**: `Llm:Tasks` mapea tarea → tier (`Large`, `Medium`, `Small`), `Llm:Tiers` mapea tier → proveedor + modelo + tope de salida, y `Llm:Models` lleva el precio por millón de tokens de entrada, salida, lectura de caché y escritura de caché. Una tarea no listada cae en `Llm:DefaultTier`. Cambiar de modelo o de proveedor es configuración, nunca código; el Api no arranca si la configuración es incoherente (`ValidateOnStart`).
+- **Puerta única**: `ILlmGateway.CompleteAsync` resuelve el modelo, mide la latencia con un reloj monótono, calcula el costo y escribe una fila en `llm_call` (proveedor, modelo, tokens de entrada/salida/caché, latencia, costo, job asociado). El tenant sale del contexto de la petición, así que la traza queda aislada por RLS.
+- **Presupuestos duros** (`Llm:Budget`): antes de llamar se estima el peor caso (entrada aproximada + todo el tope de salida). Si excede `MaxCostPerCall`, o si lo ya gastado por el job más ese peor caso excede `MaxCostPerJob`, se lanza `LlmBudgetExceededException` **sin gastar nada**. Si la respuesta real termina costando más de lo previsto (por ejemplo por escritura de caché), la llamada se registra primero y la excepción se lanza después: el dinero ya se gastó y la traza no se pierde.
+- **Temperatura**: el adaptador Anthropic no la envía; los modelos posteriores a Opus 4.6 rechazan cualquier valor distinto de 1.0. El adaptador OpenAI-compatible sí la admite, porque los modelos locales la usan.
+- **Claves**: `Llm:Providers:<nombre>:ApiKey` sale de vault o de configuración local ignorada por git (D9); nunca del repositorio. El adaptador no registra prompts ni respuestas.
+
+Costo de una corrida (criterio de aceptación de T-006):
+
+```sql
+SELECT job_id,
+       COUNT(*)                AS llamadas,
+       SUM(input_tokens)       AS tokens_entrada,
+       SUM(output_tokens)      AS tokens_salida,
+       SUM(cache_read_tokens)  AS tokens_cache,
+       SUM(cost)               AS costo
+FROM llm_call
+WHERE job_id = '<id del job>'
+GROUP BY job_id;
+```
+
+Pruebas: las de contrato usan un `HttpMessageHandler` stub para ambos adaptadores. La prueba contra **endpoint real** está marcada `Category=RealEndpoint` y queda fuera de la corrida normal (`tests.runsettings`):
+
+```bash
+# Anthropic (consume saldo real)
+SF_LLM_KIND=anthropic SF_LLM_MODEL=claude-haiku-4-5 SF_LLM_API_KEY=sk-ant-... \
+  dotnet test Tests/SoftwareFactory.Infrastructure.Tests -p:RunSettingsFilePath= --filter "Category=RealEndpoint"
+
+# OpenAI-compatible con un modelo local (sin costo):
+docker run -d --rm --name sf-ollama -p 11434:11434 ollama/ollama
+docker exec sf-ollama ollama pull qwen2.5:0.5b
+SF_LLM_KIND=openai SF_LLM_BASE_URL=http://localhost:11434/v1 SF_LLM_MODEL=qwen2.5:0.5b \
+  dotnet test Tests/SoftwareFactory.Infrastructure.Tests -p:RunSettingsFilePath= --filter "Category=RealEndpoint"
+```
+
+`-p:RunSettingsFilePath=` es necesario porque `tests.runsettings` excluye esa categoría en la corrida normal. Son dos pruebas: el adaptador contra el endpoint, y el recorrido completo (gateway → `llm_call` → consulta SQL de costo) contra Postgres de Testcontainers.
+
+## Observabilidad
+
+Serilog en ambos hosts (`estandar-backend.md` §3), configurado desde la sección `Serilog` de `appsettings.json`. El log de petición del Api añade `TraceId` y, cuando hay token validado, `TenantId` y `UserId`. Las llamadas LLM registran tarea, tier, proveedor, modelo, tokens, latencia y costo — nunca el prompt ni la respuesta, ni claves ni credenciales.
+
 ## Arranque local
 
 Requisitos: .NET SDK 10, Docker y el certificado de desarrollo confiable (`dotnet dev-certs https --trust`).

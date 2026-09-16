@@ -19,6 +19,7 @@
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup Label="Application">
@@ -26,6 +27,22 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <!-- estandar-backend.md §3: structured logging with Serilog.
+         Licence: Apache-2.0 (Serilog and Serilog.AspNetCore). Permissive: it ships inside the self-hosted containers. -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="LLM">
+    <!-- Official Anthropic SDK for .NET (github.com/anthropics/anthropic-sdk-csharp).
+         Licence: MIT — verified 16-sep-2026 in the package's nuspec (<license type="expression">MIT</license>), as are its
+         transitive dependencies (Microsoft.Extensions.AI.Abstractions, System.Text.Json, System.Net.ServerSentEvents,
+         System.Collections.Immutable, System.Threading.Tasks.Extensions: all MIT). This matters because the package travels
+         inside the self-hosted containers we licence (M3) — the AutoMapper lesson: a commercial licence there is a blocker.
+         The dependency stays behind ILlmProvider: dropping it is a one-file change (Infrastructure/Llm/AnthropicLlmProvider.cs). -->
+    <PackageVersion Include="Anthropic" Version="12.48.0" />
   </ItemGroup>
 
   <ItemGroup Label="Security">

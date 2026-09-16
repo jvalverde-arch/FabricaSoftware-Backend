@@ -1,10 +1,13 @@
 using SoftwareFactory.Api.Composition;
 using SoftwareFactory.Api.Middleware;
+using SoftwareFactory.Api.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Local, git-ignored settings (connection strings, seed password, JWT secret) for whoever does not use Aspire or user-secrets.
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
+builder.AddPlatformLogging();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -15,6 +18,7 @@ builder.Services.AddApiSecurity(builder.Configuration);
 
 var app = builder.Build();
 
+app.UsePlatformRequestLogging();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
