@@ -8,3 +8,6 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA2007.severity = none
 # CA1812: JSON response records and xUnit fixtures are instantiated by the serializer and the test framework.
 dotnet_diagnostic.CA1812.severity = none
+# CA2000: test doubles (HttpClient over a stub handler, providers built per test) live as long as the test itself;
+# the runner tears the class down and disposing them by hand only adds noise.
+dotnet_diagnostic.CA2000.severity = none

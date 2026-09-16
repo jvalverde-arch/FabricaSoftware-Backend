@@ -1,4 +1,14 @@
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Structured logging with Serilog (estandar-backend.md §3); the job consumer of T-007 logs through it.
+builder.Logging.ClearProviders();
+builder.Services.AddSerilog((services, configuration) => configuration
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", builder.Environment.ApplicationName));
 
 builder.Services.AddHealthChecks();
 

@@ -3,6 +3,7 @@
   <!-- Presentation host: controllers, request/response contracts, auth and middleware. Composition root for DI. -->
 
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
   </ItemGroup>
