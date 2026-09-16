@@ -17,6 +17,9 @@ internal static partial class TraceabilityLog
     [LoggerMessage(EventId = 5003, Level = LogLevel.Information, Message = "Artifact {ArtifactId} deleted logically.")]
     public static partial void Deleted(this ILogger logger, Guid artifactId);
 
+    [LoggerMessage(EventId = 5005, Level = LogLevel.Information, Message = "Artifact {ArtifactId} moved from schema v{FromSchemaVersion} to v{ToSchemaVersion}; its score was invalidated because it was measured against the previous schema.")]
+    public static partial void ScoreInvalidated(this ILogger logger, Guid artifactId, int fromSchemaVersion, int toSchemaVersion);
+
     [LoggerMessage(EventId = 5004, Level = LogLevel.Warning, Message = "Artifact {ArtifactId} could not be deleted: {RelationCount} relation(s) still point at it.")]
     public static partial void DeleteBlocked(this ILogger logger, Guid artifactId, int relationCount);
 }

@@ -63,7 +63,17 @@ public sealed class ArtifactService(
         {
             var schemaVersion = schemas.CurrentVersionOf(artifact.Type);
             Validate(artifact.Type, schemaVersion, content);
+            var previousSchemaVersion = current?.SchemaVersion ?? schemaVersion;
             current = WriteVersion(artifact, content, schemaVersion, now);
+
+            if (schemaVersion > previousSchemaVersion)
+            {
+                // The score was measured against the previous schema, so it is optimistic and would lie. S5 owns
+                // scoring; here the artifact simply goes back to «sin evaluar» until it is measured again.
+                artifact.SetScore(null, now);
+                logger.ScoreInvalidated(artifact.Id, previousSchemaVersion, schemaVersion);
+            }
+
             Audit(AuditedAction.ArtifactUpdated, artifact, now, $$"""{"version":{{current.Number}}}""");
             logger.Updated(artifact.Id, current.Number, schemaVersion);
             changed = true;

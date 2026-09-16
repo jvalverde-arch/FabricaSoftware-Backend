@@ -185,6 +185,39 @@ public sealed class ArtifactServiceTests
     }
 
     [Fact]
+    public async Task A_version_written_under_a_newer_schema_invalidates_the_score()
+    {
+        // A score computed under an older schema is optimistic: it was measured against fewer or different fields.
+        var harness = new Harness(currentUserStorySchema: 2, upgraders: [new AddSoThat()]);
+        var artifact = new Artifact(_tenantId, _projectId, "user_story", "Vieja", ArtifactLevel.Project);
+        harness.Repository.Artifacts.Add(artifact);
+        harness.Repository.Versions.Add(new ArtifactVersion(_tenantId, artifact.Id, artifact.AdvanceVersion(_now), """{"as_a":"cajera"}""", schemaVersion: 1, AuthorType.Human, Guid.CreateVersion7()));
+        await harness.Service.SetScoreAsync(artifact.Id, 92, CancellationToken.None);
+
+        var updated = await harness.Service.UpdateAsync(
+            new UpdateArtifactCommand(artifact.Id, null, """{"as_a":"cajera","so_that":"la deuda baje"}"""),
+            CancellationToken.None);
+
+        Assert.Equal(2, updated.SchemaVersion);
+        Assert.Null(updated.Artifact.Score);
+    }
+
+    [Fact]
+    public async Task A_version_written_under_the_same_schema_keeps_the_score()
+    {
+        var harness = new Harness();
+        var created = await harness.Service.CreateAsync(new CreateArtifactCommand(_projectId, "user_story", "Registrar pago", Story), CancellationToken.None);
+        await harness.Service.SetScoreAsync(created.Artifact.Id, 80, CancellationToken.None);
+
+        var updated = await harness.Service.UpdateAsync(
+            new UpdateArtifactCommand(created.Artifact.Id, null, """{"as_a":"cajera","i_want":"otra cosa","so_that":"la deuda baje","acceptance_criteria":["x"]}"""),
+            CancellationToken.None);
+
+        // Editing content under the same schema is ordinary work: re-scoring is S5's job, not a reason to erase it.
+        Assert.Equal(80, updated.Artifact.Score);
+    }
+
+    [Fact]
     public async Task The_diff_between_two_versions_lists_what_changed()
     {
         var harness = new Harness();
