@@ -1,5 +1,7 @@
 # FabricaSoftware-Backend
 
+[![ci](https://github.com/jvalverde-arch/FabricaSoftware-Backend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jvalverde-arch/FabricaSoftware-Backend/actions/workflows/ci.yml)
+
 Backend de la fábrica de software agentizada: .NET 10, Clean Architecture, solución `SoftwareFactory.sln` en la raíz.
 
 ## Estructura
@@ -135,6 +137,19 @@ Se ven los eventos `state`, varios `progress` con las fases del handler de prueb
 ## Observabilidad
 
 Serilog en ambos hosts (`estandar-backend.md` §3), configurado desde la sección `Serilog` de `appsettings.json`. El log de petición del Api añade `TraceId` y, cuando hay token validado, `TenantId` y `UserId`. Las llamadas LLM registran tarea, tier, proveedor, modelo, tokens, latencia y costo — nunca el prompt ni la respuesta, ni claves ni credenciales.
+
+## Integración continua (T-008)
+
+`.github/workflows/ci.yml` corre en cada pull request y en cada push a `main`:
+
+1. **Build y pruebas**: `dotnet build -c Release` (warnings como errores) y `dotnet test` completo. Las pruebas de integración levantan Postgres con Testcontainers usando el Docker del runner; las marcadas `Category=RealEndpoint` quedan fuera por `tests.runsettings` (necesitan credenciales y gastan dinero).
+2. **Imágenes**: solo desde `main` y solo si las pruebas pasaron, publica a GHCR desde los Dockerfiles del repo:
+   - `ghcr.io/jvalverde-arch/softwarefactory-api`
+   - `ghcr.io/jvalverde-arch/softwarefactory-agentruntime`
+
+   Cada imagen lleva tres etiquetas: `sha-<commit>` (inmutable, la que se despliega), `main` (móvil) y `0.1.<número de corrida>` (legible). Cuando haya versionado de producto, esa tercera pasa a ser la versión real.
+
+Demo de cierre del sprint: [`docs/demo-sprint-0.md`](docs/demo-sprint-0.md).
 
 ## Arranque local
 
