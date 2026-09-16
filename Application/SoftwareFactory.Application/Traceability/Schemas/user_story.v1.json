@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/user_story/v1",
+  "title": "Historia de usuario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "as_a",
+    "i_want",
+    "so_that",
+    "acceptance_criteria"
+  ],
+  "properties": {
+    "as_a": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Rol que obtiene el valor"
+    },
+    "i_want": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Lo que necesita"
+    },
+    "so_that": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Valor que persigue"
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Criterios verificables"
+    }
+  }
+}

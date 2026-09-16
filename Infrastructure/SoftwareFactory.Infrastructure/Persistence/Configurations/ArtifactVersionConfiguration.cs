@@ -14,6 +14,7 @@ internal sealed class ArtifactVersionConfiguration : TenantScopedConfiguration<A
         {
             table.HasCheckConstraint("ck_artifact_version_author_type", CheckConstraints.EnumIn<AuthorType>("author_type"));
             table.HasCheckConstraint("ck_artifact_version_number", "number >= 1");
+            table.HasCheckConstraint("ck_artifact_version_schema_version", "schema_version >= 1");
         });
 
         builder.Property(version => version.Content).HasColumnType("jsonb").IsRequired();

@@ -344,7 +344,7 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
 
                     b.ToTable("audit_event", null, t =>
                         {
-                            t.HasCheckConstraint("ck_audit_event_action", "action IN ('login_succeeded', 'login_failed', 'lockout', 'refresh_reuse_detected', 'logout', 'password_changed')");
+                            t.HasCheckConstraint("ck_audit_event_action", "action IN ('login_succeeded', 'login_failed', 'lockout', 'refresh_reuse_detected', 'logout', 'password_changed', 'artifact_created', 'artifact_updated', 'artifact_state_changed', 'artifact_deleted')");
 
                             t.HasCheckConstraint("ck_audit_event_actor_type", "actor_type IS NULL OR actor_type IN ('human', 'agent')");
                         });
@@ -696,6 +696,10 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("ix_artifact_project_id");
 
+                    b.HasIndex("ProjectId", "State")
+                        .HasDatabaseName("ix_artifact_alive")
+                        .HasFilter("deleted_at IS NULL");
+
                     b.HasIndex("TenantId", "ProjectId", "Type")
                         .HasDatabaseName("ix_artifact_tenant_id_project_id_type");
 
@@ -743,6 +747,10 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("number");
 
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("schema_version");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -767,6 +775,8 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_artifact_version_author_type", "author_type IN ('human', 'agent')");
 
                             t.HasCheckConstraint("ck_artifact_version_number", "number >= 1");
+
+                            t.HasCheckConstraint("ck_artifact_version_schema_version", "schema_version >= 1");
                         });
                 });
 

@@ -30,7 +30,7 @@ internal static class TenantGraph
         var project = new SoftwareProject(tenant.Id, $"Project {slug}", "Probe project");
         var story = new Artifact(tenant.Id, project.Id, "user_story", "As a user", ArtifactLevel.Project);
         var testCase = new Artifact(tenant.Id, project.Id, "test_case", "Login works", ArtifactLevel.Project);
-        var version = new ArtifactVersion(tenant.Id, story.Id, story.AdvanceVersion(), """{"title":"As a user"}""", AuthorType.Human, user.Id);
+        var version = new ArtifactVersion(tenant.Id, story.Id, story.AdvanceVersion(DateTimeOffset.UtcNow), """{"title":"As a user"}""", schemaVersion: 1, AuthorType.Human, user.Id);
         var relation = new Relation(tenant.Id, testCase.Id, story.Id, "validates", """{"note":"probe"}""", AuthorType.Agent, user.Id);
         var decision = new Decision(tenant.Id, project.Id, DecisionType.Decision, AuthorType.Human, user.Id, Role.Functional, "Because the probe says so.", null);
         var job = new Job(tenant.Id, "probe", """{"n":1}""");

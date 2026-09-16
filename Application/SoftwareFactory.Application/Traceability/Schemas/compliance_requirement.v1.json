@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/compliance_requirement/v1",
+  "title": "Requisito de cumplimiento",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "regulation",
+    "statement"
+  ],
+  "properties": {
+    "regulation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Norma o regulación"
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exigencia"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Ámbito geográfico o regulatorio"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Evidencia que se debe producir"
+    }
+  }
+}

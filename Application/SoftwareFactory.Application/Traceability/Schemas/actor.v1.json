@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/actor/v1",
+  "title": "Actor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description"
+  ],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quién es"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Qué puede hacer"
+    }
+  }
+}

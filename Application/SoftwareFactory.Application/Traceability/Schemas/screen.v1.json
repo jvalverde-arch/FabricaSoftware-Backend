@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/screen/v1",
+  "title": "Pantalla",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "purpose"
+  ],
+  "properties": {
+    "purpose": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Para qué sirve"
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Elementos principales"
+    },
+    "navigation": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Desde y hacia dónde navega"
+    }
+  }
+}

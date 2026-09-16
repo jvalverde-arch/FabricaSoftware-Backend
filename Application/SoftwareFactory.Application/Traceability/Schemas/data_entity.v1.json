@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/data_entity/v1",
+  "title": "Entidad de datos",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "attributes"
+  ],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Qué representa"
+    },
+    "attributes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Atributos de la entidad",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Nombre"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Tipo"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Detalle"
+          }
+        }
+      }
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Atributo que identifica"
+    }
+  }
+}

@@ -14,6 +14,15 @@
   <data name="ValidationFailedTitle" xml:space="preserve"><value>La solicitud no es válida.</value></data>
   <data name="TooManyRequestsTitle" xml:space="preserve"><value>Límite de solicitudes excedido</value></data>
   <data name="TooManyRequests" xml:space="preserve"><value>Demasiadas solicitudes. Inténtelo de nuevo más tarde.</value></data>
+  <data name="ArtifactNotFound" xml:space="preserve"><value>El artefacto no existe o no pertenece a tu organización.</value></data>
+  <data name="ArtifactContentInvalid" xml:space="preserve"><value>El contenido no cumple el esquema de su tipo.</value></data>
+  <data name="ArtifactTypeUnknown" xml:space="preserve"><value>«{0}» no es un tipo de artefacto del catálogo.</value></data>
+  <data name="ArtifactStateTransitionTitle" xml:space="preserve"><value>Transición de estado no permitida</value></data>
+  <data name="ArtifactStateTransition" xml:space="preserve"><value>Un artefacto en «{0}» no puede pasar a «{1}».</value></data>
+  <data name="ArtifactDeleteBlockedTitle" xml:space="preserve"><value>No se puede eliminar el artefacto</value></data>
+  <data name="ArtifactDeleteBlocked" xml:space="preserve"><value>Todavía hay {0} relación(es) apuntando a este artefacto. Elimínalas primero.</value></data>
+  <data name="ArtifactSchemaUpgradeTitle" xml:space="preserve"><value>El artefacto no se puede editar todavía</value></data>
+  <data name="ArtifactSchemaUpgrade" xml:space="preserve"><value>El tipo «{0}» no tiene una migración publicada de la versión {1} a la {2} de su esquema; se puede consultar, pero no editar.</value></data>
   <data name="Status400Title" xml:space="preserve"><value>Solicitud incorrecta</value></data>
   <data name="Status401Title" xml:space="preserve"><value>No autenticado</value></data>
   <data name="Status403Title" xml:space="preserve"><value>Acceso denegado</value></data>

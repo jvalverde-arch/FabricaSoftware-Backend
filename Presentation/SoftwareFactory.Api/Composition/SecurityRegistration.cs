@@ -45,6 +45,7 @@ internal static class SecurityRegistration
 
         services.AddProblemDetails(options => options.CustomizeProblemDetails = CustomizeProblemDetails);
         services.AddExceptionHandler<ValidationExceptionHandler>();
+        services.AddExceptionHandler<TraceabilityExceptionHandler>();
         services.Configure<ApiBehaviorOptions>(options => options.InvalidModelStateResponseFactory = InvalidModelState);
 
         return services;

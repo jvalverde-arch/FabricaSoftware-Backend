@@ -9,4 +9,10 @@ public enum AuditAction
     RefreshReuseDetected,
     Logout,
     PasswordChanged,
+
+    // Traceability (S1): every change to an artifact leaves a trace (HU-001 §6).
+    ArtifactCreated,
+    ArtifactUpdated,
+    ArtifactStateChanged,
+    ArtifactDeleted,
 }

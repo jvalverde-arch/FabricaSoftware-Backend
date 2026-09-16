@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/api/v1",
+  "title": "API",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "method",
+    "path"
+  ],
+  "properties": {
+    "method": {
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "description": "Verbo HTTP"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Ruta"
+    },
+    "request": {
+      "type": "object",
+      "description": "Forma del cuerpo de entrada"
+    },
+    "response": {
+      "type": "object",
+      "description": "Forma de la respuesta"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Errores contemplados"
+    }
+  }
+}

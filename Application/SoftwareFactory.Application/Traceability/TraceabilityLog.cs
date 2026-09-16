@@ -1,0 +1,22 @@
+using Microsoft.Extensions.Logging;
+
+namespace SoftwareFactory.Application.Traceability;
+
+/// <summary>Structured events of the traceability module; never the content, which is the tenant's material.</summary>
+internal static partial class TraceabilityLog
+{
+    [LoggerMessage(EventId = 5000, Level = LogLevel.Information, Message = "Artifact {ArtifactId} of type {ArtifactType} created in project {ProjectId} (schema v{SchemaVersion}).")]
+    public static partial void Created(this ILogger logger, Guid artifactId, string artifactType, Guid projectId, int schemaVersion);
+
+    [LoggerMessage(EventId = 5001, Level = LogLevel.Information, Message = "Artifact {ArtifactId} updated to version {Version} (schema v{SchemaVersion}).")]
+    public static partial void Updated(this ILogger logger, Guid artifactId, int version, int schemaVersion);
+
+    [LoggerMessage(EventId = 5002, Level = LogLevel.Information, Message = "Artifact {ArtifactId} moved from {From} to {To}.")]
+    public static partial void StateChanged(this ILogger logger, Guid artifactId, Domain.Traceability.ArtifactState from, Domain.Traceability.ArtifactState to);
+
+    [LoggerMessage(EventId = 5003, Level = LogLevel.Information, Message = "Artifact {ArtifactId} deleted logically.")]
+    public static partial void Deleted(this ILogger logger, Guid artifactId);
+
+    [LoggerMessage(EventId = 5004, Level = LogLevel.Warning, Message = "Artifact {ArtifactId} could not be deleted: {RelationCount} relation(s) still point at it.")]
+    public static partial void DeleteBlocked(this ILogger logger, Guid artifactId, int relationCount);
+}

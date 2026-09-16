@@ -10,6 +10,8 @@ using SoftwareFactory.Application.Platform.Handlers;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Platform;
+using SoftwareFactory.Domain.Project;
+using SoftwareFactory.Domain.Traceability;
 using SoftwareFactory.Infrastructure.Persistence;
 using SoftwareFactory.Infrastructure.Persistence.Options;
 using Testcontainers.PostgreSql;
@@ -114,6 +116,52 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
             .ExecuteUpdateAsync(context.Jobs.Where(entity => entity.Id == job.Id), setters => setters.SetProperty(entity => entity.AvailableAt, DateTimeOffset.UtcNow.AddYears(1)));
 
         return job.Id;
+    }
+
+    /// <summary>Project of the seeded «local» tenant, where the artifact tests put their model.</summary>
+    public async Task<Guid> LocalProjectIdAsync()
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        var existing = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .FirstOrDefaultAsync(context.Projects.Where(project => project.TenantId == SeedOptions.LocalTenantId));
+
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+
+        var project = new SoftwareProject(SeedOptions.LocalTenantId, "Proyecto de pruebas", "Creado por la suite de Api");
+        context.Projects.Add(project);
+        await context.SaveChangesAsync();
+        return project.Id;
+    }
+
+    /// <summary>Relates two artifacts directly, to exercise the delete guard without needing HU-002.</summary>
+    public async Task RelateAsync(Guid sourceId, Guid targetId, string type)
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        var author = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .FirstAsync(context.Users.Where(user => user.TenantId == SeedOptions.LocalTenantId).Select(user => user.Id));
+
+        context.Relations.Add(new Relation(SeedOptions.LocalTenantId, sourceId, targetId, type, null, AuthorType.Human, author));
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>An artifact of a different tenant, to prove it is invisible from this one.</summary>
+    public async Task<Guid> CreateForeignArtifactAsync()
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        var tenant = new Tenant($"ajeno-{Guid.NewGuid():N}", $"ajeno-{Guid.NewGuid():N}");
+        context.Tenants.Add(tenant);
+
+        var project = new SoftwareProject(tenant.Id, "Proyecto ajeno", "De otro cliente");
+        context.Projects.Add(project);
+
+        var artifact = new Artifact(tenant.Id, project.Id, "user_story", "Historia ajena", ArtifactLevel.Project);
+        context.Artifacts.Add(artifact);
+        await context.SaveChangesAsync();
+
+        return artifact.Id;
     }
 
     public async Task<IReadOnlyList<AuditEvent>> AuditEventsOfAsync(Guid userId)
