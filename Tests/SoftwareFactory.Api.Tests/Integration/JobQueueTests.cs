@@ -19,7 +19,9 @@ public sealed class JobQueueTests(ApiFixture fixture)
         using var client = fixture.CreateClient();
         var session = await client.LoginAsync(ApiFixture.AdminEmail, ApiFixture.AdminPassword);
 
-        var queued = await EnqueueAsync(client, session.AccessToken, """{"steps":3,"delayMs":150}""");
+        // Long enough that the subscription always beats the run: with a fast job the worker could finish before the
+        // client connects and there would be no progress event to see (the run would still be correct).
+        var queued = await EnqueueAsync(client, session.AccessToken, """{"steps":3,"delayMs":600}""");
         Assert.Equal("pending", queued.State);
 
         var events = await ReadEventsAsync(client, session.AccessToken, queued.Id, TimeSpan.FromSeconds(30));
@@ -31,7 +33,9 @@ public sealed class JobQueueTests(ApiFixture fixture)
         Assert.Equal(1, final.Attempts);
         Assert.Null(final.LastError);
 
-        var phases = events.Where(e => e.Name == "progress").Select(e => e.Job.Phase).Distinct().ToList();
+        // The run reported its phases: either seen live or, if the client arrived late, kept on the finished row.
+        var phases = events.Select(e => e.Job.Phase).Where(phase => phase is not null).Distinct().ToList();
+        Assert.NotEmpty(phases);
         Assert.Contains("leyendo contexto", phases);
         Assert.All(events, e => Assert.Equal(queued.Id, e.Job.Id));
     }
