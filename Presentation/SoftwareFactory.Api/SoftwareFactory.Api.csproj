@@ -14,4 +14,9 @@
     <ProjectReference Include="../../Infrastructure/SoftwareFactory.Infrastructure/SoftwareFactory.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Hosting policy shared by both hosts; linked source keeps one copy of the rule instead of two that drift. -->
+    <Compile Include="../Shared/HostConfiguration.cs" Link="Composition/HostConfiguration.cs" />
+  </ItemGroup>
+
 </Project>

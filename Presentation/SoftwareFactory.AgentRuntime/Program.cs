@@ -1,5 +1,6 @@
 using Serilog;
 using SoftwareFactory.AgentRuntime.Composition;
+using SoftwareFactory.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +12,9 @@ builder.Services.AddSerilog((services, configuration) => configuration
     .Enrich.FromLogContext()
     .Enrich.WithProperty("Application", builder.Environment.ApplicationName));
 
-// Local, git-ignored settings (connection strings, LLM keys) for whoever does not use Aspire.
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+// Local, git-ignored settings (connection strings, LLM keys) for whoever does not use Aspire. They go before the
+// environment variables, never after: see HostConfiguration.
+builder.Configuration.AddLocalSettings();
 
 builder.Services.AddHealthChecks();
 builder.Services.AddWorkerServices(builder.Configuration);
