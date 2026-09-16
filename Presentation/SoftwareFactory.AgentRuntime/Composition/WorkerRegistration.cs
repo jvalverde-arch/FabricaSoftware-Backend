@@ -1,4 +1,5 @@
 using SoftwareFactory.AgentRuntime.Jobs;
+using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Application.Traceability;
 using SoftwareFactory.Application.Platform.Contracts;
 using SoftwareFactory.Application.Platform.Handlers;
@@ -13,6 +14,9 @@ internal static class WorkerRegistration
     {
         services.AddInfrastructure(configuration);
         services.AddSingleton(TimeProvider.System);
+
+        // Whatever the worker writes is audited too, and the audit trail asks the host where the write came from.
+        services.AddScoped<IClientContext, WorkerClientContext>();
 
         // Handlers of sprint 0; the real agents arrive with S2.
         services.AddScoped<IJobHandler, ProbeJobHandler>();
