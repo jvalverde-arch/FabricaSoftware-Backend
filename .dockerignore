@@ -1,0 +1,34 @@
+# Build context (estandar-backend.md §7): only what is needed to restore and publish reaches the daemon.
+**/bin/
+**/obj/
+**/artifacts/
+**/TestResults/
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+
+# Tests never ship: the image publishes a host project, and excluding them keeps the context small.
+Tests/
+docs/
+infra/
+**/node_modules/
+**/dist/
+
+# Specs live outside git and outside the images.
+Spec/
+
+# Secrets never enter a layer, not even one that is later discarded.
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/*.env
+.env*
+**/secrets.json
+**/*.pfx
+**/*.key
+**/*.p12
+
+**/.DS_Store
+Dockerfile*
+.dockerignore
