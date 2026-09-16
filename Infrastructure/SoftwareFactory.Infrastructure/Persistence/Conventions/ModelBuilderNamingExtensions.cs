@@ -20,7 +20,7 @@ internal static class ModelBuilderNamingExtensions
                 entityType.SetTableName(SnakeCase.Convert(entityType.ClrType.Name));
             }
 
-            var table = entityType.GetTableName()!;
+            var table = entityType.GetTableName();
 
             foreach (var property in entityType.GetProperties())
             {
