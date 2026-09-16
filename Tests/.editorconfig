@@ -6,3 +6,5 @@ dotnet_diagnostic.CA1515.severity = none
 dotnet_diagnostic.CA1707.severity = none
 # CA2007: test methods run without a synchronization context.
 dotnet_diagnostic.CA2007.severity = none
+# CA1812: JSON response records and xUnit fixtures are instantiated by the serializer and the test framework.
+dotnet_diagnostic.CA1812.severity = none

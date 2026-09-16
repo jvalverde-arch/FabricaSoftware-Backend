@@ -55,18 +55,47 @@ public sealed class AppUser : TenantScopedEntity
 
     public static string Normalize(string email) => Guard.NotBlank(email).ToUpperInvariant();
 
+    /// <summary>Credential change: the new hash plus a new security stamp, so every existing session is invalidated.</summary>
     public void ChangePasswordHash(string passwordHash)
     {
+        RehashPassword(passwordHash);
+        RotateSecurityStamp();
+    }
+
+    /// <summary>Transparent re-hash of the same password with new parameters; sessions stay valid.</summary>
+    public void RehashPassword(string passwordHash)
+    {
         PasswordHash = Guard.NotBlank(passwordHash);
+        Touch();
+    }
+
+    public void RotateSecurityStamp()
+    {
         SecurityStamp = Guid.NewGuid().ToString("N");
         Touch();
     }
 
-    public void RecordFailedAccess()
+    /// <summary>
+    /// Registers a failed sign-in and applies <paramref name="policy"/> (estandar-auth.md §2).
+    /// Returns the new lockout end when this failure completed a block and locked the account; otherwise null.
+    /// </summary>
+    public DateTimeOffset? RecordFailedAccess(LockoutPolicy policy, DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(policy);
+
         FailedAccessCount++;
         Touch();
+
+        if (FailedAccessCount % policy.Threshold != 0)
+        {
+            return null;
+        }
+
+        LockoutEnd = now.ToUniversalTime().Add(policy.DurationForBlock(FailedAccessCount / policy.Threshold));
+        return LockoutEnd;
     }
+
+    public bool IsLockedOut(DateTimeOffset now) => LockoutEnd is { } end && end > now;
 
     public void ResetFailedAccess()
     {
@@ -75,17 +104,10 @@ public sealed class AppUser : TenantScopedEntity
         Touch();
     }
 
-    public void LockUntil(DateTimeOffset lockoutEnd)
-    {
-        LockoutEnd = lockoutEnd.ToUniversalTime();
-        Touch();
-    }
-
     public void Deactivate()
     {
         IsActive = false;
-        SecurityStamp = Guid.NewGuid().ToString("N");
-        Touch();
+        RotateSecurityStamp();
     }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;

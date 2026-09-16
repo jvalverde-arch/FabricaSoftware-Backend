@@ -3,16 +3,14 @@ using SoftwareFactory.Domain.Common;
 
 namespace SoftwareFactory.Infrastructure.Persistence.Tenancy;
 
-/// <summary>Per-scope tenant holder. The authentication middleware (T-004) sets it once per request from the token.</summary>
-public sealed class ScopedTenantContext : ITenantContext
+/// <summary>Per-scope tenant holder. The tenant middleware sets it from the token claim; sign-in sets it from the user it finds.</summary>
+public sealed class ScopedTenantContext : ITenantContext, ITenantContextWriter
 {
     public Guid? TenantId { get; private set; }
 
-    public void Set(Guid tenantId)
+    public void Establish(Guid tenantId)
     {
         Guard.NotEmpty(tenantId);
         TenantId = tenantId;
     }
-
-    public void Clear() => TenantId = null;
 }

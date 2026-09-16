@@ -294,6 +294,62 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                     b.ToTable("app_user", (string)null);
                 });
 
+            modelBuilder.Entity("SoftwareFactory.Domain.Platform.AuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
+
+                    b.Property<string>("ActorType")
+                        .HasColumnType("text")
+                        .HasColumnName("actor_type");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_audit_event");
+
+                    b.HasIndex("ActorId")
+                        .HasDatabaseName("ix_audit_event_actor_id");
+
+                    b.HasIndex("TenantId", "OccurredAt")
+                        .HasDatabaseName("ix_audit_event_tenant_id_occurred_at");
+
+                    b.ToTable("audit_event", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_audit_event_action", "action IN ('login_succeeded', 'login_failed', 'lockout', 'refresh_reuse_detected', 'logout', 'password_changed')");
+
+                            t.HasCheckConstraint("ck_audit_event_actor_type", "actor_type IS NULL OR actor_type IN ('human', 'agent')");
+                        });
+                });
+
             modelBuilder.Entity("SoftwareFactory.Domain.Platform.Job", b =>
                 {
                     b.Property<Guid>("Id")
@@ -363,6 +419,65 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_job_state", "state IN ('pending', 'running', 'succeeded', 'failed', 'cancelled')");
                         });
+                });
+
+            modelBuilder.Entity("SoftwareFactory.Domain.Platform.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_token_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_refresh_token");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_refresh_token_family_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_refresh_token_user_id");
+
+                    b.HasIndex("TenantId", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_refresh_token_tenant_id_token_hash");
+
+                    b.ToTable("refresh_token", (string)null);
                 });
 
             modelBuilder.Entity("SoftwareFactory.Domain.Platform.Tenant", b =>
@@ -837,6 +952,16 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_app_user_tenant_id");
                 });
 
+            modelBuilder.Entity("SoftwareFactory.Domain.Platform.AuditEvent", b =>
+                {
+                    b.HasOne("SoftwareFactory.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_audit_event_tenant_id");
+                });
+
             modelBuilder.Entity("SoftwareFactory.Domain.Platform.Job", b =>
                 {
                     b.HasOne("SoftwareFactory.Domain.Platform.Tenant", null)
@@ -845,6 +970,23 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_job_tenant_id");
+                });
+
+            modelBuilder.Entity("SoftwareFactory.Domain.Platform.RefreshToken", b =>
+                {
+                    b.HasOne("SoftwareFactory.Domain.Platform.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_token_tenant_id");
+
+                    b.HasOne("SoftwareFactory.Domain.Platform.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_token_user_id");
                 });
 
             modelBuilder.Entity("SoftwareFactory.Domain.Platform.UserRole", b =>

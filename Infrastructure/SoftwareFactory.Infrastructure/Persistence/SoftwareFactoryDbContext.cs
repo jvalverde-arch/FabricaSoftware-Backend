@@ -35,6 +35,10 @@ public sealed class SoftwareFactoryDbContext(DbContextOptions<SoftwareFactoryDbC
 
     public DbSet<Chunk> Chunks => Set<Chunk>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
