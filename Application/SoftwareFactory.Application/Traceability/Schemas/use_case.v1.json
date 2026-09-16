@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/use_case/v1",
+  "title": "Caso de uso",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "actor",
+    "main_flow"
+  ],
+  "properties": {
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Actor principal"
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Precondiciones"
+    },
+    "main_flow": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Flujo principal, paso a paso"
+    },
+    "alternate_flows": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Flujos alternos y de excepción"
+    },
+    "postconditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Postcondiciones"
+    }
+  }
+}

@@ -110,6 +110,32 @@ SF_LLM_KIND=openai SF_LLM_BASE_URL=http://localhost:11434/v1 SF_LLM_MODEL=qwen2.
 
 `-p:RunSettingsFilePath=` es necesario porque `tests.runsettings` excluye esa categoría en la corrida normal. Son dos pruebas: el adaptador contra el endpoint, y el recorrido completo (gateway → `llm_call` → consulta SQL de costo) contra Postgres de Testcontainers.
 
+## Artefactos tipados y versionados (HU-001, S1)
+
+- **Catálogo cerrado de 15 tipos** (`module`, `user_story`, …, `boundary_contract`), cada uno con su **JSON Schema versionado** en `Application/SoftwareFactory.Application/Traceability/Schemas/<tipo>.v<N>.json`, embebidos en el ensamblado: el código y los esquemas contra los que valida se despliegan juntos.
+- **Cada versión de contenido guarda su `schema_version`**. Esa columna es la que permite leer historia vieja después de que un tipo evoluciona.
+
+### Qué pasa cuando cambia el esquema de un tipo
+
+| Situación | Comportamiento |
+|---|---|
+| Leer una versión escrita con un esquema anterior | Se devuelve **tal cual**, con su `schema_version`. Nunca se revalida ni se reescribe contra el esquema nuevo: la historia es fiel. |
+| Escribir contenido nuevo | Se valida contra la **versión vigente** del esquema del tipo y la versión nueva queda sellada con ella. |
+| Cambio **aditivo** (campos opcionales) | Se publica `<tipo>.v<N+1>.json` y ya. El contenido viejo sigue siendo válido y editable sin fricción. |
+| Cambio **rompedor** (campo requerido, renombre, tipo más estrecho) | Exige publicar un `IArtifactContentUpgrader` para el salto `vN → vN+1`. Se aplica **al editar**, nunca en masa. |
+| Editar un artefacto rezagado con upgraders publicados | `GET /api/artifacts/{id}?forEditing=true` devuelve el contenido llevado al esquema vigente; se persiste solo cuando la persona guarda. |
+| Editar uno rezagado **sin** upgrader para algún salto | 409 diciendo exactamente qué salto falta. Se puede **consultar**, no editar, hasta que se publique el upgrader. |
+
+La historia **no se reescribe en masa**: una migración que tocara versiones ya escritas falsificaría autoría y fecha de un cambio que nadie hizo. Por eso el upgrade es perezoso y siempre queda a nombre de quien guarda.
+
+### Contratos
+
+`POST /api/projects/{id}/artifacts`, `GET|PUT|DELETE /api/artifacts/{id}`, `GET /api/projects/{id}/artifacts` (filtros: tipo, estado, módulo, rango de score, texto en título, paginación), `GET /api/artifacts/{id}/versions`, `GET /api/artifacts/{id}/versions/{n}/diff/{m}`, `PUT /api/artifacts/{id}/score`.
+
+El contenido que rompe su esquema responde **422 con detalle por campo**; un borrado con relaciones activas responde **409 con la lista de relaciones que lo bloquean**; una transición de estado no permitida responde **409** (`draft → in_review → approved → frozen`, con vuelta atrás mientras no esté congelado). El borrado es lógico: la fila permanece con `deleted_at`.
+
+`IArtifactService` es la **única vía de escritura**: ni el Api ni los agentes tocan las tablas, así que validación, versionado y auditoría ocurren siempre. El módulo no conoce tipos del dominio hacia afuera — estados, niveles y autoría viajan por sus nombres de cable —, y la auditoría se escribe a través de `IAuditTrail`, contrato del módulo Platform, para que los módulos no se toquen entre sí.
+
 ## Cola de jobs y progreso (T-007, doc 03 D6)
 
 - **Tabla, no broker**: `job` (tipo, payload JSONB, estado, intentos, `available_at`, `locked_until`, fase y porcentaje). El worker vive en **AgentRuntime**; el Api solo encola y lee (`Jobs:Enabled` está en `false` en el Api y en `true` en el runtime).

@@ -9,6 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Content schemas of the artifact types (HU-001): they ship with the code that validates against them. -->
+    <EmbeddedResource Include="Traceability/Schemas/*.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj" />
   </ItemGroup>
 

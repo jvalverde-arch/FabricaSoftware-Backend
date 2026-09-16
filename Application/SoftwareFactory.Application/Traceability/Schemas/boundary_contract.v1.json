@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/boundary_contract/v1",
+  "title": "Contrato de frontera",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_class",
+    "identifier",
+    "contract_version",
+    "signature",
+    "lifecycle"
+  ],
+  "properties": {
+    "contract_class": {
+      "enum": [
+        "api",
+        "event",
+        "data"
+      ],
+      "description": "Clase del contrato (HU-006)"
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador estable del contrato"
+    },
+    "contract_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Versión del contrato, p. ej. 1.2.0"
+    },
+    "signature": {
+      "type": "object",
+      "description": "Firma o esquema de lo expuesto"
+    },
+    "owner_module": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Módulo propietario"
+    },
+    "lifecycle": {
+      "enum": [
+        "active",
+        "deprecated"
+      ],
+      "description": "Estado del ciclo de vida"
+    }
+  }
+}

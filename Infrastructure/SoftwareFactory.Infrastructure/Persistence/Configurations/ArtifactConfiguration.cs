@@ -23,11 +23,17 @@ internal sealed class ArtifactConfiguration : TenantScopedConfiguration<Artifact
         builder.Property(artifact => artifact.State).HasConversion<SnakeCaseEnumConverter<ArtifactState>>().IsRequired();
         builder.Property(artifact => artifact.Level).HasConversion<SnakeCaseEnumConverter<ArtifactLevel>>().IsRequired();
         builder.Ignore(artifact => artifact.IsDeleted);
+        builder.Ignore(artifact => artifact.IsEditable);
         builder.HasOne<SoftwareProject>().WithMany().HasForeignKey(artifact => artifact.ProjectId).OnDelete(DeleteBehavior.Restrict);
 
         // Lists and the matrix filter by tenant, project and type (sprint-01, HU-001).
         builder.HasIndex(artifact => new { artifact.TenantId, artifact.ProjectId, artifact.Type });
         builder.HasIndex(artifact => artifact.ProjectId);
+
+        // The lists exclude deleted artifacts, so the hot index does too (HU-001 §4 and §5).
+        builder.HasIndex(artifact => new { artifact.ProjectId, artifact.State })
+            .HasDatabaseName("ix_artifact_alive")
+            .HasFilter("deleted_at IS NULL");
         builder.UseXminConcurrencyToken();
     }
 }

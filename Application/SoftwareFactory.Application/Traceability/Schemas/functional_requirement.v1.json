@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/functional_requirement/v1",
+  "title": "Requisito funcional",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "statement"
+  ],
+  "properties": {
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Qué debe hacer el sistema"
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Por qué"
+    },
+    "priority": {
+      "enum": [
+        "must",
+        "should",
+        "could"
+      ],
+      "description": "Prioridad"
+    }
+  }
+}

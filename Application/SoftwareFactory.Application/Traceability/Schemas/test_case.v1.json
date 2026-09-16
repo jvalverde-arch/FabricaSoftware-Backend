@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/test_case/v1",
+  "title": "Caso de prueba",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "steps",
+    "expected_result"
+  ],
+  "properties": {
+    "kind": {
+      "enum": [
+        "unit",
+        "integration",
+        "e2e",
+        "manual"
+      ],
+      "description": "Tipo de prueba"
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Precondiciones"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Pasos"
+    },
+    "expected_result": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Resultado esperado"
+    }
+  }
+}

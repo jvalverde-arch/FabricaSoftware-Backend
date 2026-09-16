@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/module/v1",
+  "title": "Módulo",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "purpose"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Nombre del módulo"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Qué resuelve"
+    },
+    "owner_role": {
+      "enum": [
+        "functional",
+        "architect",
+        "qa",
+        "compliance"
+      ],
+      "description": "Rol responsable"
+    },
+    "depends_on_modules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Módulos de los que depende, por nombre"
+    }
+  }
+}

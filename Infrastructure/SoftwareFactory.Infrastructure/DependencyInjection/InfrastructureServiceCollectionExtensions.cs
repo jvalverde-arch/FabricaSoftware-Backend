@@ -15,6 +15,7 @@ using SoftwareFactory.Infrastructure.Persistence.Repositories;
 using SoftwareFactory.Infrastructure.Persistence.Tenancy;
 using SoftwareFactory.Infrastructure.Jobs;
 using SoftwareFactory.Infrastructure.Llm;
+using SoftwareFactory.Infrastructure.Traceability;
 using SoftwareFactory.Infrastructure.Security;
 using SoftwareFactory.Infrastructure.Security.Identity;
 using SoftwareFactory.Infrastructure.Security.Jwt;
@@ -76,6 +77,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddLlm();
         services.AddJobQueue();
+        services.AddTraceability();
 
         return services;
     }

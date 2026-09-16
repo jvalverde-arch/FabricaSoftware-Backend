@@ -35,6 +35,15 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup Label="Traceability">
+    <!-- JSON Schema validation of artifact content (HU-001). Licence: MIT, as are its transitive dependencies
+         (NJsonSchema.Annotations, Namotion.Reflection, Newtonsoft.Json) — verified 17-sep-2026, and it matters
+         because it ships inside the self-hosted containers (M3). JsonSchema.Net was discarded: its binary release
+         is covered by an Open Source Maintenance Fee EULA that charges commercial users, the AutoMapper problem
+         again. The library stays behind IJsonSchemaValidator: replacing it is one file. -->
+    <PackageVersion Include="NJsonSchema" Version="11.6.1" />
+  </ItemGroup>
+
   <ItemGroup Label="LLM">
     <!-- Official Anthropic SDK for .NET (github.com/anthropics/anthropic-sdk-csharp).
          Licence: MIT — verified 16-sep-2026 in the package's nuspec (<license type="expression">MIT</license>), as are its

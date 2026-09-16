@@ -1,0 +1,117 @@
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using SoftwareFactory.Api.Contracts.Artifacts;
+using SoftwareFactory.Api.Resources;
+using SoftwareFactory.Application.Traceability.Contracts;
+
+namespace SoftwareFactory.Api.ErrorHandling;
+
+/// <summary>
+/// Turns the failures of the traceability module into ProblemDetails (estandar-backend.md §2): 422 with detail per
+/// field when the content breaks its schema, 409 with the list of relations when a delete is blocked, 404 when the
+/// artifact does not exist for this tenant.
+/// </summary>
+internal sealed class TraceabilityExceptionHandler(IProblemDetailsService problemDetails, IStringLocalizer<ApiMessages> messages) : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    {
+        var problem = Describe(exception);
+
+        if (problem is null)
+        {
+            return false;
+        }
+
+        httpContext.Response.StatusCode = problem.Status ?? StatusCodes.Status400BadRequest;
+
+        return await problemDetails.TryWriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            ProblemDetails = problem,
+        });
+    }
+
+    /// <summary>Each failure of the module has one honest status code; anything else is left to the next handler.</summary>
+    private ProblemDetails? Describe(Exception exception)
+    {
+        if (exception is ArtifactValidationException validation)
+        {
+            return Validation(validation);
+        }
+
+        if (exception is ArtifactHasRelationsException blocked)
+        {
+            return Blocked(blocked);
+        }
+
+        if (exception is ArtifactNotFoundException)
+        {
+            return NotFound();
+        }
+
+        if (exception is ArtifactStateTransitionException transition)
+        {
+            return InvalidTransition(transition);
+        }
+
+        if (exception is ArtifactTypeUnknownException unknown)
+        {
+            return UnknownType(unknown);
+        }
+
+        return exception is ArtifactSchemaUpgradeUnavailableException upgrade ? UpgradeUnavailable(upgrade) : null;
+    }
+
+    private ValidationProblemDetails Validation(ArtifactValidationException exception) =>
+        new(exception.Errors
+            .GroupBy(error => error.Path, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Select(error => error.Message).ToArray(), StringComparer.Ordinal))
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["ArtifactContentInvalid"],
+        };
+
+    private ProblemDetails Blocked(ArtifactHasRelationsException exception)
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status409Conflict,
+            Title = messages["ArtifactDeleteBlockedTitle"],
+            Detail = messages["ArtifactDeleteBlocked", exception.Relations.Count],
+        };
+
+        // The list travels with the error so the person sees what to undo instead of guessing (HU-001 §4).
+        problem.Extensions["relations"] = exception.Relations.Select(BlockingRelationResponse.From).ToList();
+
+        return problem;
+    }
+
+    private ProblemDetails InvalidTransition(ArtifactStateTransitionException exception) => new()
+    {
+        Status = StatusCodes.Status409Conflict,
+        Title = messages["ArtifactStateTransitionTitle"],
+        Detail = messages["ArtifactStateTransition", exception.From, exception.To],
+    };
+
+    private ProblemDetails NotFound() => new()
+    {
+        Status = StatusCodes.Status404NotFound,
+        Title = messages["Status404Title"],
+        Detail = messages["ArtifactNotFound"],
+    };
+
+    private ValidationProblemDetails UnknownType(ArtifactTypeUnknownException exception) =>
+        new(new Dictionary<string, string[]>(StringComparer.Ordinal) { ["type"] = [messages["ArtifactTypeUnknown", exception.ArtifactType]] })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["ArtifactContentInvalid"],
+        };
+
+    private ProblemDetails UpgradeUnavailable(ArtifactSchemaUpgradeUnavailableException exception) => new()
+    {
+        Status = StatusCodes.Status409Conflict,
+        Title = messages["ArtifactSchemaUpgradeTitle"],
+        Detail = messages["ArtifactSchemaUpgrade", exception.ArtifactType, exception.FromVersion, exception.ToVersion],
+    };
+}

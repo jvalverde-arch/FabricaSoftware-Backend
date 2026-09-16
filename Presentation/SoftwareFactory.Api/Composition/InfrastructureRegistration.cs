@@ -1,3 +1,4 @@
+using SoftwareFactory.Application.Traceability;
 using SoftwareFactory.Infrastructure.DependencyInjection;
 
 namespace SoftwareFactory.Api.Composition;
@@ -10,6 +11,9 @@ internal static class InfrastructureRegistration
         ArgumentNullException.ThrowIfNull(environment);
 
         services.AddInfrastructure(configuration);
+
+        // Authorship of what this host writes: the signed-in person. The worker registers its own (agents in S4).
+        services.AddScoped<IArtifactAuthorContext, ArtifactAuthorFromCurrentUser>();
 
         if (environment.IsDevelopment())
         {

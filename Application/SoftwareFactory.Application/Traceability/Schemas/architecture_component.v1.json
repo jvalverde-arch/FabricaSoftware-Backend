@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/architecture_component/v1",
+  "title": "Componente de arquitectura",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "responsibility"
+  ],
+  "properties": {
+    "responsibility": {
+      "type": "string",
+      "minLength": 1,
+      "description": "De qué responde"
+    },
+    "technology": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Tecnología"
+    },
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Interfaces que ofrece o consume"
+    }
+  }
+}

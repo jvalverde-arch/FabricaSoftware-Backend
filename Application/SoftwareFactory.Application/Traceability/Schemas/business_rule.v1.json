@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softwarefactory.local/schemas/business_rule/v1",
+  "title": "Regla de negocio",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "statement"
+  ],
+  "properties": {
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Regla"
+    },
+    "formula": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Expresión o cálculo"
+    },
+    "applies_to": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Entidades o procesos afectados"
+    }
+  }
+}
