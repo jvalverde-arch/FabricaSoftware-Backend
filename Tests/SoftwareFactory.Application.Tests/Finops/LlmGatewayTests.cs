@@ -145,6 +145,30 @@ public sealed class LlmGatewayTests
     }
 
     [Fact]
+    public async Task A_call_made_inside_a_job_run_carries_its_job_id_without_being_asked()
+    {
+        var harness = new Harness();
+        var jobId = Guid.CreateVersion7();
+        harness.CurrentJob.Establish(jobId);
+
+        await harness.Gateway.CompleteAsync(Request(), CancellationToken.None);
+
+        Assert.Equal(jobId, Assert.Single(harness.Calls.Calls).JobId);
+    }
+
+    [Fact]
+    public async Task An_explicit_job_wins_over_the_run_in_context()
+    {
+        var harness = new Harness();
+        harness.CurrentJob.Establish(Guid.CreateVersion7());
+        var explicitJob = Guid.CreateVersion7();
+
+        await harness.Gateway.CompleteAsync(Request() with { JobId = explicitJob }, CancellationToken.None);
+
+        Assert.Equal(explicitJob, Assert.Single(harness.Calls.Calls).JobId);
+    }
+
+    [Fact]
     public async Task A_provider_failure_is_not_recorded_as_a_cost()
     {
         var harness = new Harness();
@@ -180,6 +204,7 @@ public sealed class LlmGatewayTests
                 Calls,
                 UnitOfWork,
                 new FakeTenantContext(withoutTenant ? null : _tenantId),
+                CurrentJob,
                 Options.Create(options),
                 new FakeMonotonicClock(step ?? TimeSpan.FromMilliseconds(10)),
                 NullLogger<LlmGateway>.Instance);
@@ -194,5 +219,7 @@ public sealed class LlmGatewayTests
         public FakeLlmCallRepository Calls { get; } = new();
 
         public FakeUnitOfWork UnitOfWork { get; } = new();
+
+        public FakeCurrentJob CurrentJob { get; } = new();
     }
 }

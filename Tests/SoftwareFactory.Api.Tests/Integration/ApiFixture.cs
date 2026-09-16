@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SoftwareFactory.AgentRuntime.Jobs;
 using SoftwareFactory.Api.Tests.Integration.Probes;
+using SoftwareFactory.Application.Platform.Contracts;
+using SoftwareFactory.Application.Platform.Handlers;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Platform;
@@ -59,9 +62,17 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
         await _container.DisposeAsync();
     }
 
-    /// <summary>Same host, a tighter rate limit and its own limiter state, for the throttling tests.</summary>
+    /// <summary>
+    /// Same host with a tighter rate limit and its own limiter state, for the throttling tests. Its worker stays off:
+    /// a second worker would claim jobs and hold their lease when the factory is disposed mid-run.
+    /// </summary>
     public WebApplicationFactory<ApiAssemblyMarker> CreateThrottledFactory(int permitLimit) =>
-        Factory.WithWebHostBuilder(builder => Configure(builder, permitLimit));
+        Factory.WithWebHostBuilder(builder =>
+        {
+            Configure(builder, permitLimit);
+            builder.ConfigureAppConfiguration(configuration =>
+                configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Jobs:Enabled"] = "false" }));
+        });
 
     ValueTask IAsyncDisposable.DisposeAsync() => new(DisposeAsync());
 
@@ -85,6 +96,24 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
         context.UserRoles.AddRange(roles.Select(role => new UserRole(SeedOptions.LocalTenantId, user.Id, role)));
         await context.SaveChangesAsync();
         return user;
+    }
+
+    /// <summary>Queues a run for a different tenant, to prove one tenant cannot watch another's progress.</summary>
+    public async Task<Guid> QueueForeignJobAsync()
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        var tenant = new Tenant($"otro-{Guid.NewGuid():N}", $"otro-{Guid.NewGuid():N}");
+        context.Tenants.Add(tenant);
+
+        var job = new Job(tenant.Id, "probe", """{"steps":1}""");
+        context.Jobs.Add(job);
+        await context.SaveChangesAsync();
+
+        // Parked far in the future so the worker of this host never picks it up.
+        await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .ExecuteUpdateAsync(context.Jobs.Where(entity => entity.Id == job.Id), setters => setters.SetProperty(entity => entity.AvailableAt, DateTimeOffset.UtcNow.AddYears(1)));
+
+        return job.Id;
     }
 
     public async Task<IReadOnlyList<AuditEvent>> AuditEventsOfAsync(Guid userId)
@@ -113,9 +142,25 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
             ["Auth:RateLimit:PermitLimit"] = permitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["Auth:RateLimit:Window"] = "00:01:00",
             ["Cors:AllowedOrigins:0"] = AllowedOrigin,
+            // The worker runs inside this host so the queue can be exercised end to end; in production it stays off
+            // here (appsettings.json) and lives in AgentRuntime.
+            ["Jobs:Enabled"] = "true",
+            ["Jobs:PollInterval"] = "00:00:00.200",
+            // Short lease: a worker that dies in a test must not park a job for minutes.
+            ["Jobs:Lease"] = "00:00:10",
+            ["Jobs:MaxAttempts"] = "2",
+            ["Jobs:RetryBaseDelay"] = "00:00:01",
+            ["Jobs:RetryMaxDelay"] = "00:00:02",
+            ["Jobs:Stream:PollInterval"] = "00:00:00.200",
+            ["Jobs:Stream:Heartbeat"] = "00:00:02",
+            ["Jobs:Stream:MaxDuration"] = "00:01:00",
         }));
         builder.ConfigureTestServices(services =>
-            services.AddControllers().AddApplicationPart(typeof(RoleProbeController).Assembly));
+        {
+            services.AddControllers().AddApplicationPart(typeof(RoleProbeController).Assembly);
+            services.AddScoped<IJobHandler, ProbeJobHandler>();
+            services.AddHostedService<JobWorker>();
+        });
     }
 }
 

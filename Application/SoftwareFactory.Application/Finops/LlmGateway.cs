@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SoftwareFactory.Application.Common.Jobs;
 using SoftwareFactory.Application.Common.Llm;
 using SoftwareFactory.Application.Common.Persistence;
 using SoftwareFactory.Application.Common.Tenancy;
@@ -18,6 +19,7 @@ public sealed class LlmGateway(
     ILlmCallRepository calls,
     IUnitOfWork unitOfWork,
     ITenantContext tenantContext,
+    ICurrentJob currentJob,
     IOptions<LlmOptions> options,
     IMonotonicClock clock,
     ILogger<LlmGateway> logger) : ILlmGateway
@@ -28,6 +30,10 @@ public sealed class LlmGateway(
 
         var tenantId = tenantContext.TenantId
             ?? throw new InvalidOperationException("An LLM call needs a tenant in context: its cost belongs to somebody.");
+
+        // A call made inside an agent run belongs to that run even if the caller did not say so: the cost of a run
+        // is summed by job_id (doc 01, E11).
+        request = request.JobId is null && currentJob.JobId is { } runningJob ? request with { JobId = runningJob } : request;
 
         var settings = options.Value;
         var resolution = settings.Resolve(request.Task);

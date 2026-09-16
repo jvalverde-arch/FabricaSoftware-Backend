@@ -6,6 +6,7 @@ using SoftwareFactory.Application.Common.Persistence;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Application.Common.Tenancy;
 using SoftwareFactory.Application.Finops.Contracts;
+using SoftwareFactory.Application.Platform.Contracts;
 using SoftwareFactory.Domain.Finops;
 using SoftwareFactory.Domain.Platform;
 using SoftwareFactory.Infrastructure.Persistence;
@@ -13,6 +14,7 @@ using SoftwareFactory.Infrastructure.Persistence.Initialization;
 using SoftwareFactory.Infrastructure.Persistence.Options;
 using SoftwareFactory.Infrastructure.Persistence.Repositories;
 using SoftwareFactory.Infrastructure.Persistence.Tenancy;
+using SoftwareFactory.Infrastructure.Jobs;
 using SoftwareFactory.Infrastructure.Llm;
 using SoftwareFactory.Infrastructure.Security;
 using SoftwareFactory.Infrastructure.Security.Identity;
@@ -33,6 +35,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOptions<Argon2Options>()
             .Bind(configuration.GetSection(Argon2Options.SectionName))
             .Validate(argon2 => argon2.IsValid(), "Argon2 parameters are out of range (memory >= 8*parallelism KiB, iterations >= 1, salt >= 8, hash >= 16).")
+            .ValidateOnStart();
+
+        services.AddOptions<JobWorkerOptions>()
+            .Bind(configuration.GetSection(JobWorkerOptions.SectionName))
+            .Validate(jobs => jobs.IsValid(), "Jobs settings are out of range (positive PollInterval and Lease, MaxAttempts >= 1, 0 < RetryBaseDelay <= RetryMaxDelay).")
             .ValidateOnStart();
 
         services.AddOptions<LlmOptions>()
@@ -69,6 +76,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddLlm();
+        services.AddJobQueue();
 
         return services;
     }

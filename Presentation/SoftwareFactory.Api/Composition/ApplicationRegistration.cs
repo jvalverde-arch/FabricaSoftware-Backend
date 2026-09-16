@@ -1,5 +1,7 @@
 using System.Globalization;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using FluentValidation;
+using SoftwareFactory.Api.Jobs;
 using SoftwareFactory.Application.Platform;
 using SoftwareFactory.Application.Platform.Contracts;
 
@@ -19,6 +21,13 @@ internal static class ApplicationRegistration
         services.AddScoped<IValidator<LoginCommand>, LoginCommandValidator>();
         services.AddScoped<IValidator<ChangePasswordCommand>, ChangePasswordCommandValidator>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddOptions<JobStreamOptions>()
+            .Bind(configuration.GetSection(JobStreamOptions.SectionName))
+            .Validate(stream => stream.IsValid(), "Jobs:Stream settings are out of range (positive PollInterval and MaxDuration, Heartbeat >= PollInterval).")
+            .ValidateOnStart();
+        services.AddScoped<JobEventWriter>();
+        services.TryAddSingleton(TimeProvider.System);
 
         return services;
     }

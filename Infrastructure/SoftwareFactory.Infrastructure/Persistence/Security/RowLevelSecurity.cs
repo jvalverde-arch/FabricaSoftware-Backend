@@ -18,6 +18,15 @@ internal static class RowLevelSecurity
     public const string LoginLookupPolicyName = "login_lookup";
     public const string UserTable = "app_user";
     public const string AuditTable = "audit_event";
+    public const string JobTable = "job";
+
+    /// <summary>
+    /// Claim of the job queue (T-007). The worker has no tenant when it polls, so this function runs as its owner
+    /// (SECURITY DEFINER) to look across tenants; it only locks and returns the next runnable row with
+    /// FOR UPDATE SKIP LOCKED, and the caller then establishes that tenant for the rest of the run. It returns
+    /// identifiers only, never payloads.
+    /// </summary>
+    public const string ClaimNextJobFunction = "app_claim_next_job";
     public const string ApplicationRole = "softwarefactory_app";
     public const string TenantTable = "tenant";
     public const string PolicyName = "tenant_isolation";
@@ -117,6 +126,29 @@ internal static class RowLevelSecurity
 
         return sql.ToString();
     }
+
+    /// <summary>Job-queue claim function (T-007). Owned by the migration account, executable by the application role.</summary>
+    public static string EnableJobQueueSql() => $$"""
+        CREATE OR REPLACE FUNCTION {{ClaimNextJobFunction}}(p_now timestamptz)
+        RETURNS TABLE (job_id uuid, job_tenant_id uuid)
+        LANGUAGE sql VOLATILE SECURITY DEFINER
+        SET search_path = public
+        AS $fn$
+            SELECT j.id, j.tenant_id
+            FROM {{JobTable}} j
+            WHERE (j.state = 'pending' AND j.available_at <= p_now)
+               OR (j.state = 'running' AND j.locked_until IS NOT NULL AND j.locked_until < p_now)
+            ORDER BY j.available_at, j.created_at
+            FOR UPDATE SKIP LOCKED
+            LIMIT 1
+        $fn$;
+
+        REVOKE ALL ON FUNCTION {{ClaimNextJobFunction}}(timestamptz) FROM PUBLIC;
+        GRANT EXECUTE ON FUNCTION {{ClaimNextJobFunction}}(timestamptz) TO {{ApplicationRole}};
+        """;
+
+    public static string DisableJobQueueSql() =>
+        $"DROP FUNCTION IF EXISTS {ClaimNextJobFunction}(timestamptz);";
 
     public static string DisableAuthSql()
     {

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SoftwareFactory.Application.Common.Llm;
 using SoftwareFactory.Application.Finops;
 using SoftwareFactory.Application.Finops.Contracts;
+using SoftwareFactory.Infrastructure.Jobs;
 using SoftwareFactory.Infrastructure.Llm;
 using SoftwareFactory.Infrastructure.Persistence;
 using SoftwareFactory.Infrastructure.Persistence.Repositories;
@@ -51,6 +52,7 @@ public sealed class RealEndpointGatewayTests(PostgresFixture fixture, ITestOutpu
                 new LlmCallRepository(context),
                 new UnitOfWork(context),
                 new FixedTenantContext(tenantId),
+                new ScopedCurrentJob(),
                 options,
                 new StopwatchMonotonicClock(),
                 NullLogger<LlmGateway>.Instance);
