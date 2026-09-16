@@ -1,15 +1,28 @@
-# SoftwareFactory API — multi-stage build (.NET 10)
+# SoftwareFactory Api — multi-stage build (.NET 10, estandar-backend.md §7)
 # SDK pinned to the feature band of global.json; the generic 10.0 tag moves bands and changes the analyzer set.
 FROM mcr.microsoft.com/dotnet/sdk:10.0.100 AS build
 WORKDIR /src
-COPY . .
-RUN dotnet restore SoftwareFactory.sln
-RUN dotnet publish Presentation/SoftwareFactory.Api/SoftwareFactory.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# Restore first with only the files that decide the dependency graph, so editing code does not re-run the restore.
+COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY Domain/SoftwareFactory.Domain/SoftwareFactory.Domain.csproj Domain/SoftwareFactory.Domain/
+COPY Application/SoftwareFactory.Application/SoftwareFactory.Application.csproj Application/SoftwareFactory.Application/
+COPY Infrastructure/SoftwareFactory.Infrastructure/SoftwareFactory.Infrastructure.csproj Infrastructure/SoftwareFactory.Infrastructure/
+COPY Presentation/SoftwareFactory.Api/SoftwareFactory.Api.csproj Presentation/SoftwareFactory.Api/
+# The project, not the solution: the solution also carries the test projects, which never enter the build context.
+RUN dotnet restore Presentation/SoftwareFactory.Api/SoftwareFactory.Api.csproj
+
+COPY . .
+RUN dotnet publish Presentation/SoftwareFactory.Api/SoftwareFactory.Api.csproj \
+    -c Release -o /app/publish --no-restore /p:UseAppHost=false
+
+# Chiseled: no shell and no package manager inside the image, non-root by default, roughly half the Debian size.
+# «-extra» because the platform speaks Spanish: the plain chiseled base has no ICU and runs in globalization-invariant
+# mode, where new CultureInfo("es") throws at startup. This variant adds ICU and tzdata and nothing else.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-USER app
+USER $APP_UID
 ENTRYPOINT ["dotnet", "SoftwareFactory.Api.dll"]
