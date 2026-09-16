@@ -12,7 +12,10 @@ internal static class ApplicationRegistration
     {
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("es");
 
-        services.AddOptions<AuthOptions>().Bind(configuration.GetSection(AuthOptions.SectionName));
+        services.AddOptions<AuthOptions>()
+            .Bind(configuration.GetSection(AuthOptions.SectionName))
+            .Validate(auth => auth.IsValid(), "Auth settings are out of range (MinimumPasswordLength >= 12, positive RefreshTokenLifetime, Lockout.Threshold >= 1, 0 < Lockout.BaseDuration <= Lockout.MaximumDuration).")
+            .ValidateOnStart();
         services.AddScoped<IValidator<LoginCommand>, LoginCommandValidator>();
         services.AddScoped<IValidator<ChangePasswordCommand>, ChangePasswordCommandValidator>();
         services.AddScoped<IAuthService, AuthService>();

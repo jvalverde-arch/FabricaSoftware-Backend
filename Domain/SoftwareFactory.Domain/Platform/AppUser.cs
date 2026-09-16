@@ -8,12 +8,6 @@ namespace SoftwareFactory.Domain.Platform;
 /// </summary>
 public sealed class AppUser : TenantScopedEntity
 {
-    public const int LockoutThreshold = 5;
-
-    public static readonly TimeSpan BaseLockout = TimeSpan.FromMinutes(1);
-
-    public static readonly TimeSpan MaxLockout = TimeSpan.FromDays(1);
-
     private AppUser()
     {
     }
@@ -82,24 +76,22 @@ public sealed class AppUser : TenantScopedEntity
     }
 
     /// <summary>
-    /// Registers a failed sign-in. Every <see cref="LockoutThreshold"/> consecutive failures lock the account, starting at
-    /// <see cref="BaseLockout"/> and doubling with each further block, capped at <see cref="MaxLockout"/> (estandar-auth.md §2).
-    /// Returns the new lockout end when this failure triggered a lock; otherwise null.
+    /// Registers a failed sign-in and applies <paramref name="policy"/> (estandar-auth.md §2).
+    /// Returns the new lockout end when this failure completed a block and locked the account; otherwise null.
     /// </summary>
-    public DateTimeOffset? RecordFailedAccess(DateTimeOffset now)
+    public DateTimeOffset? RecordFailedAccess(LockoutPolicy policy, DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(policy);
+
         FailedAccessCount++;
         Touch();
 
-        if (FailedAccessCount % LockoutThreshold != 0)
+        if (FailedAccessCount % policy.Threshold != 0)
         {
             return null;
         }
 
-        var blocks = FailedAccessCount / LockoutThreshold;
-        var exponent = Math.Min(blocks - 1, 30);
-        var duration = BaseLockout * Math.Pow(2, exponent);
-        LockoutEnd = now.ToUniversalTime().Add(duration > MaxLockout ? MaxLockout : duration);
+        LockoutEnd = now.ToUniversalTime().Add(policy.DurationForBlock(FailedAccessCount / policy.Threshold));
         return LockoutEnd;
     }
 

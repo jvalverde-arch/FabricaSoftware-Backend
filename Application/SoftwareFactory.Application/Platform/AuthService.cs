@@ -71,7 +71,7 @@ public sealed class AuthService(
 
         if (!await credentials.CheckPasswordAsync(user, command.Password, cancellationToken).ConfigureAwait(false))
         {
-            var lockoutEnd = user.RecordFailedAccess(now);
+            var lockoutEnd = user.RecordFailedAccess(options.Value.LockoutPolicy(), now);
 
             if (lockoutEnd is { } end)
             {

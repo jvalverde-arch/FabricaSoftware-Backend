@@ -17,7 +17,14 @@ internal sealed class AuthServiceHarness
     public static readonly DateTimeOffset Start = new(2026, 9, 11, 12, 0, 0, TimeSpan.Zero);
 
     public AuthServiceHarness()
+        : this(new AuthOptions())
     {
+    }
+
+    public AuthServiceHarness(AuthOptions authOptions)
+    {
+        ArgumentNullException.ThrowIfNull(authOptions);
+
         Tenant = new Tenant("Tenant", "tenant");
         Tenants.Tenants.Add(Tenant);
         User = AddUser(Tenant.Id, Email, Password, Role.Functional);
@@ -34,8 +41,8 @@ internal sealed class AuthServiceHarness
             CurrentUser,
             new FakeClientContext(Client),
             new LoginCommandValidator(),
-            new ChangePasswordCommandValidator(Options.Create(new AuthOptions())),
-            Options.Create(new AuthOptions()),
+            new ChangePasswordCommandValidator(Options.Create(authOptions)),
+            Options.Create(authOptions),
             Clock,
             NullLogger<AuthService>.Instance);
     }

@@ -2,10 +2,12 @@ using SoftwareFactory.Domain.Platform;
 
 namespace SoftwareFactory.Domain.Tests.Platform;
 
-/// <summary>Progressive lockout of estandar-auth.md §2: every 5 failed attempts lock the account for 1 minute, doubling each time.</summary>
+/// <summary>Progressive lockout of estandar-auth.md §2: every N failed attempts lock the account, doubling each block, capped by configuration.</summary>
 public sealed class AppUserLockoutTests
 {
     private static readonly DateTimeOffset _now = new(2026, 9, 11, 12, 0, 0, TimeSpan.Zero);
+
+    private static readonly LockoutPolicy _policy = LockoutPolicy.Default;
 
     [Fact]
     public void Four_failures_do_not_lock_the_account()
@@ -14,7 +16,7 @@ public sealed class AppUserLockoutTests
 
         for (var i = 0; i < 4; i++)
         {
-            Assert.Null(user.RecordFailedAccess(_now));
+            Assert.Null(user.RecordFailedAccess(_policy, _now));
         }
 
         Assert.Equal(4, user.FailedAccessCount);
@@ -48,13 +50,29 @@ public sealed class AppUserLockoutTests
     }
 
     [Fact]
-    public void Lockout_never_exceeds_one_day()
+    public void Lockout_never_exceeds_the_configured_cap()
     {
         var user = NewUser();
 
-        var lockoutEnd = Fail(user, 5 * 20);
+        var lockoutEnd = Fail(user, LockoutPolicy.Default.Threshold * 20);
 
-        Assert.Equal(_now.AddDays(1), lockoutEnd);
+        Assert.Equal(_now.Add(LockoutPolicy.Default.MaximumDuration), lockoutEnd);
+    }
+
+    [Fact]
+    public void A_shorter_configured_cap_is_honoured()
+    {
+        var user = NewUser();
+        var policy = new LockoutPolicy(2, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(2));
+
+        DateTimeOffset? last = null;
+
+        for (var i = 0; i < 12; i++)
+        {
+            last = user.RecordFailedAccess(policy, _now);
+        }
+
+        Assert.Equal(_now.AddMinutes(2), last);
     }
 
     [Fact]
@@ -76,7 +94,7 @@ public sealed class AppUserLockoutTests
 
         for (var i = 0; i < times; i++)
         {
-            last = user.RecordFailedAccess(_now);
+            last = user.RecordFailedAccess(_policy, _now);
         }
 
         return last;

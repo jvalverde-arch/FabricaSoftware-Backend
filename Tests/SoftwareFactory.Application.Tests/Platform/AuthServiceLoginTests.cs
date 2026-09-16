@@ -82,22 +82,36 @@ public sealed class AuthServiceLoginTests
     public async Task Locked_account_rejects_the_right_password_until_the_lockout_ends()
     {
         var harness = new AuthServiceHarness();
-        harness.User.RecordFailedAccess(AuthServiceHarness.Start);
-        var failures = harness.User.FailedAccessCount;
+        var policy = LockoutPolicy.Default;
 
-        for (var i = failures; i < AppUser.LockoutThreshold; i++)
+        for (var i = 0; i < policy.Threshold; i++)
         {
-            harness.User.RecordFailedAccess(AuthServiceHarness.Start);
+            harness.User.RecordFailedAccess(policy, AuthServiceHarness.Start);
         }
 
         Assert.Null(await harness.LoginAsync());
-        Assert.Equal(AppUser.LockoutThreshold, harness.User.FailedAccessCount);
+        Assert.Equal(policy.Threshold, harness.User.FailedAccessCount);
         Assert.Equal(AuditAction.LoginFailed, Assert.Single(harness.Audit.Events).Action);
 
         harness.Clock.Advance(TimeSpan.FromMinutes(1));
 
         Assert.NotNull(await harness.LoginAsync());
         Assert.Equal(0, harness.User.FailedAccessCount);
+    }
+
+    [Fact]
+    public async Task The_configured_lockout_threshold_is_what_counts()
+    {
+        var harness = new AuthServiceHarness(new AuthOptions { Lockout = new LockoutOptions { Threshold = 2, BaseDuration = TimeSpan.FromMinutes(5) } });
+
+        Assert.Null(await harness.LoginAsync(password: "wrong-password-here"));
+        Assert.DoesNotContain(harness.Audit.Events, e => e.Action == AuditAction.Lockout);
+
+        Assert.Null(await harness.LoginAsync(password: "wrong-password-here"));
+
+        Assert.Single(harness.Audit.Events, e => e.Action == AuditAction.Lockout);
+        Assert.True(harness.User.IsLockedOut(AuthServiceHarness.Start.AddMinutes(4)));
+        Assert.False(harness.User.IsLockedOut(AuthServiceHarness.Start.AddMinutes(5)));
     }
 
     [Fact]
