@@ -15,10 +15,11 @@ internal sealed class JobConfiguration : TenantScopedConfiguration<Job>
         builder.Property(job => job.State).HasConversion<SnakeCaseEnumConverter<JobState>>().IsRequired();
         builder.HasIndex(job => job.TenantId);
 
-        // Hot-state partial index for the worker's FOR UPDATE SKIP LOCKED poll (estandar-backend.md §4).
-        builder.HasIndex(job => job.CreatedAt)
-            .HasDatabaseName("ix_job_pending_created_at")
-            .HasFilter($"state = '{EnumText<JobState>.ToText(JobState.Pending)}'");
+        // Hot-state partial index for the worker's FOR UPDATE SKIP LOCKED poll (estandar-backend.md §4): the claim
+        // orders by available_at and only pending or lease-expired rows are candidates.
+        builder.HasIndex(job => new { job.AvailableAt, job.CreatedAt })
+            .HasDatabaseName("ix_job_claimable")
+            .HasFilter($"state IN ('{EnumText<JobState>.ToText(JobState.Pending)}', '{EnumText<JobState>.ToText(JobState.Running)}')");
 
         builder.UseXminConcurrencyToken();
     }

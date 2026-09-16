@@ -10,7 +10,7 @@ Backend de la fábrica de software agentizada: .NET 10, Clean Architecture, solu
 | `Application/` | `SoftwareFactory.Application` | Servicios (IService/Service), DTOs, validadores y contratos públicos de módulos. Referencia solo Domain. |
 | `Infrastructure/` | `SoftwareFactory.Infrastructure` | EF Core, repositorios y adaptadores externos (LLM, blob, vault, cola). |
 | `Presentation/` | `SoftwareFactory.Api` | Host web: controllers, request/response, auth, middleware. Raíz de composición (DI). |
-| `Presentation/` | `SoftwareFactory.AgentRuntime` | Host worker (Microsoft Agent Framework): consumidor de jobs. Raíz de composición (DI). Expone solo `/health`. |
+| `Presentation/` | `SoftwareFactory.AgentRuntime` | Host worker: consume la cola de jobs (T-007) con los mismos servicios de Application que usa el Api. Raíz de composición (DI). Expone solo `/health`. |
 | `Presentation/` | `SoftwareFactory.AppHost` | Orquestación local con Aspire: Postgres 17 + pgvector, MinIO, Api y AgentRuntime. No se despliega. |
 | `infra/` | `docker-compose.yml` | Postgres + MinIO para quien no usa Aspire. Credenciales en `infra/.env` (ignorado), plantilla en `infra/.env.example`. |
 | `Tests/` | `SoftwareFactory.*.Tests` | Pruebas por capa; `Api.Tests` contiene además los tests de arquitectura. |
@@ -106,6 +106,31 @@ SF_LLM_KIND=openai SF_LLM_BASE_URL=http://localhost:11434/v1 SF_LLM_MODEL=qwen2.
 ```
 
 `-p:RunSettingsFilePath=` es necesario porque `tests.runsettings` excluye esa categoría en la corrida normal. Son dos pruebas: el adaptador contra el endpoint, y el recorrido completo (gateway → `llm_call` → consulta SQL de costo) contra Postgres de Testcontainers.
+
+## Cola de jobs y progreso (T-007, doc 03 D6)
+
+- **Tabla, no broker**: `job` (tipo, payload JSONB, estado, intentos, `available_at`, `locked_until`, fase y porcentaje). El worker vive en **AgentRuntime**; el Api solo encola y lee (`Jobs:Enabled` está en `false` en el Api y en `true` en el runtime).
+- **Reclamo**: la función `app_claim_next_job` (`SECURITY DEFINER`, creada por la migración y ejecutable solo por el rol de aplicación) hace `SELECT ... FOR UPDATE SKIP LOCKED` **a través de tenants**, porque el worker no tiene tenant cuando sondea. Devuelve solo identificadores; en la misma transacción la sesión declara ese tenant, carga el job y lo pasa a `running` con un lease. Dos workers nunca se llevan el mismo job, y fuera de esa transacción la sesión sigue sin ver nada de ese tenant.
+- **Ciclo de vida**: intentos contados, reintentos con backoff exponencial (`Jobs:RetryBaseDelay` duplicando hasta `Jobs:RetryMaxDelay`, `Jobs:MaxAttempts` en total), y recuperación de corridas huérfanas: si el worker muere, el lease (`Jobs:Lease`) vence y otro lo retoma. Un apagado ordenado libera el lease sin gastar intento.
+- **Costo por corrida**: el worker fija el job actual en el scope, así que **toda llamada LLM dentro de la corrida queda en `llm_call` con su `job_id`** sin que el llamador tenga que acordarse; de ahí sale la consulta de costo de T-006.
+- **Endpoints**: `POST /api/jobs` encola (202 con la ubicación del job), `GET /api/jobs/{id}` devuelve su estado, y `GET /api/jobs/{id}/events` transmite el progreso por **server-sent events**. La cola respeta RLS: una corrida de otro tenant devuelve 404.
+- **El stream no deja conexiones colgadas**: se cierra al terminar la corrida, ante `RequestAborted` (el cliente se fue), y al llegar al tope `Jobs:Stream:MaxDuration`; manda un latido cada `Jobs:Stream:Heartbeat` para detectar clientes muertos, desactiva el buffering (`X-Accel-Buffering: no`, importante detrás del Nginx del paquete self-hosted) y solo emite eventos cuando la fila cambió. Un cliente que llega tarde recibe un único evento `completed`.
+
+Prueba manual del criterio (con `./start.sh` o los dos hosts arriba):
+
+```bash
+TOKEN=$(curl -sk -H "Content-Type: application/json" \
+  -d '{"email":"admin@local","password":"<Seed:AdminPassword>"}' \
+  https://localhost:7160/api/auth/login | python3 -c "import json,sys;print(json.load(sys.stdin)['accessToken'])")
+
+JOB=$(curl -sk -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"type":"probe","payload":"{\"steps\":4,\"delayMs\":700}"}' \
+  https://localhost:7160/api/jobs | python3 -c "import json,sys;print(json.load(sys.stdin)['id'])")
+
+curl -sk -N -H "Authorization: Bearer $TOKEN" "https://localhost:7160/api/jobs/$JOB/events"
+```
+
+Se ven los eventos `state`, varios `progress` con las fases del handler de prueba y un `completed` final.
 
 ## Observabilidad
 

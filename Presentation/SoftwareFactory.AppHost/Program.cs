@@ -53,7 +53,12 @@ builder.AddProject<Projects.SoftwareFactory_Api>("api", launchProfileName: "http
     .WithHttpHealthCheck("/health", endpointName: "https")
     .WithExternalHttpEndpoints();
 
+// The worker consumes the job queue, so it needs the database. It connects with the application login role that the
+// Api provisions at startup — never with the owner account.
 builder.AddProject<Projects.SoftwareFactory_AgentRuntime>("agentruntime")
+    .WithReference(database, connectionName: "softwarefactory-admin")
+    .WithEnvironment("Database__AppRolePassword", dbAppPassword)
+    .WithEnvironment("Jwt__SigningKeys__0__Secret", jwtSigningKey)
     .WaitFor(database)
     .WaitFor(minio)
     .WithHttpHealthCheck("/health");
