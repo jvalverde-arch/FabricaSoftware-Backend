@@ -19,6 +19,7 @@ public static class TraceabilityServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddSingleton(ArtifactSchemaRegistry.Embedded);
+        services.AddSingleton(RelationCompatibilityMatrix.Embedded);
         services.AddSingleton<IJsonSchemaValidator, NJsonSchemaValidator>();
         services.AddSingleton(provider => new ArtifactContentMigrator(
             provider.GetRequiredService<ArtifactSchemaRegistry>(),
@@ -27,6 +28,8 @@ public static class TraceabilityServiceCollectionExtensions
         services.AddScoped<IAuditTrail, AuditTrail>();
         services.AddScoped<IArtifactRepository, ArtifactRepository>();
         services.AddScoped<IArtifactService, ArtifactService>();
+        services.AddScoped<IRelationRepository, RelationRepository>();
+        services.AddScoped<IRelationService, RelationService>();
 
         return services;
     }

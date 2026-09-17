@@ -33,4 +33,15 @@
   <data name="Status429Title" xml:space="preserve"><value>Límite de solicitudes excedido</value></data>
   <data name="JobNotFound" xml:space="preserve"><value>La corrida no existe o no pertenece a tu organización.</value></data>
   <data name="Status500Title" xml:space="preserve"><value>Error interno del servidor</value></data>
+  <data name="RelationRefusedTitle" xml:space="preserve"><value>Relación no válida</value></data>
+  <data name="RelationIncompatible" xml:space="preserve"><value>Un artefacto «{0}» no puede «{1}» a un «{2}».</value></data>
+  <data name="RelationCrossProject" xml:space="preserve"><value>Los dos artefactos son de proyectos distintos y ninguno es global.</value></data>
+  <data name="RelationCrossProjectDetail" xml:space="preserve"><value>Solo se puede relacionar entre proyectos cuando al menos un extremo es un artefacto global del cliente (por ejemplo un contrato de frontera). Artefactos {0} y {1}.</value></data>
+  <data name="RelationSelfReference" xml:space="preserve"><value>Un artefacto no puede relacionarse consigo mismo.</value></data>
+  <data name="RelationSelfReferenceDetail" xml:space="preserve"><value>El artefacto {0} es origen y destino de la misma relación.</value></data>
+  <data name="RelationTypeUnknown" xml:space="preserve"><value>«{0}» no es un tipo de relación del catálogo.</value></data>
+  <data name="RelationDuplicateTitle" xml:space="preserve"><value>La relación ya existe</value></data>
+  <data name="RelationDuplicate" xml:space="preserve"><value>Ya hay una relación «{0}» entre esos dos artefactos.</value></data>
+  <data name="RelationLevels" xml:space="preserve"><value>El vecindario va de 1 a {0} niveles.</value></data>
+  <data name="RelationNotFound" xml:space="preserve"><value>La relación no existe o no pertenece a tu organización.</value></data>
 </root>

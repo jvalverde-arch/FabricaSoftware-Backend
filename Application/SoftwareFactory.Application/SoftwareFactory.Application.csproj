@@ -11,6 +11,8 @@
   <ItemGroup>
     <!-- Content schemas of the artifact types (HU-001): they ship with the code that validates against them. -->
     <EmbeddedResource Include="Traceability/Schemas/*.json" />
+    <!-- Compatibility matrix of the relation types (HU-002): the catalog ships with the code that enforces it. -->
+    <EmbeddedResource Include="Traceability/Relations/*.json" />
   </ItemGroup>
 
   <ItemGroup>

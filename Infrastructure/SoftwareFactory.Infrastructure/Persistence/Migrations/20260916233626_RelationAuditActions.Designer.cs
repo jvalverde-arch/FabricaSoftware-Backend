@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using SoftwareFactory.Infrastructure.Persistence;
 namespace SoftwareFactory.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SoftwareFactoryDbContext))]
-    partial class SoftwareFactoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916233626_RelationAuditActions")]
+    partial class RelationAuditActions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -904,14 +907,14 @@ namespace SoftwareFactory.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_relation");
 
+                    b.HasIndex("SourceId")
+                        .HasDatabaseName("ix_relation_source_id");
+
                     b.HasIndex("TargetId")
                         .HasDatabaseName("ix_relation_target_id");
 
-                    b.HasIndex("TenantId", "SourceId")
-                        .HasDatabaseName("ix_relation_tenant_id_source_id");
-
-                    b.HasIndex("TenantId", "TargetId")
-                        .HasDatabaseName("ix_relation_tenant_id_target_id");
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_relation_tenant_id");
 
                     b.HasIndex("SourceId", "TargetId", "Type")
                         .IsUnique()

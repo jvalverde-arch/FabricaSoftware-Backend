@@ -22,4 +22,13 @@ internal static partial class TraceabilityLog
 
     [LoggerMessage(EventId = 5004, Level = LogLevel.Warning, Message = "Artifact {ArtifactId} could not be deleted: {RelationCount} relation(s) still point at it.")]
     public static partial void DeleteBlocked(this ILogger logger, Guid artifactId, int relationCount);
+
+    [LoggerMessage(EventId = 5010, Level = LogLevel.Information, Message = "Relation {RelationId} created: {SourceId} {RelationType} {TargetId}.")]
+    public static partial void RelationCreated(this ILogger logger, Guid relationId, Guid sourceId, Guid targetId, string relationType);
+
+    [LoggerMessage(EventId = 5011, Level = LogLevel.Information, Message = "Relation {RelationId} of type {RelationType} deleted.")]
+    public static partial void RelationDeleted(this ILogger logger, Guid relationId, string relationType);
+
+    [LoggerMessage(EventId = 5012, Level = LogLevel.Warning, Message = "Relation refused by the compatibility matrix: a '{SourceType}' cannot '{RelationType}' a '{TargetType}'.")]
+    public static partial void RelationRefused(this ILogger logger, string sourceType, string relationType, string targetType);
 }

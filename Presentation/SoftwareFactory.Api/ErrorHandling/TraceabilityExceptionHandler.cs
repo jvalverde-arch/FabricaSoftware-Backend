@@ -60,6 +60,41 @@ internal sealed class TraceabilityExceptionHandler(IProblemDetailsService proble
             return UnknownType(unknown);
         }
 
+        if (exception is RelationIncompatibleException incompatible)
+        {
+            return Incompatible(incompatible);
+        }
+
+        if (exception is RelationCrossProjectException crossProject)
+        {
+            return CrossProject(crossProject);
+        }
+
+        if (exception is RelationSelfReferenceException self)
+        {
+            return SelfReference(self);
+        }
+
+        if (exception is RelationAlreadyExistsException duplicate)
+        {
+            return Duplicate(duplicate);
+        }
+
+        if (exception is RelationTypeUnknownException unknownRelation)
+        {
+            return UnknownRelationType(unknownRelation);
+        }
+
+        if (exception is RelationLevelsOutOfRangeException levels)
+        {
+            return LevelsOutOfRange(levels);
+        }
+
+        if (exception is RelationNotFoundException)
+        {
+            return RelationNotFound();
+        }
+
         return exception is ArtifactSchemaUpgradeUnavailableException upgrade ? UpgradeUnavailable(upgrade) : null;
     }
 
@@ -107,6 +142,67 @@ internal sealed class TraceabilityExceptionHandler(IProblemDetailsService proble
             Status = StatusCodes.Status422UnprocessableEntity,
             Title = messages["ArtifactContentInvalid"],
         };
+
+    /// <summary>422 naming the rule that was violated and what the matrix does allow instead (HU-002 §2).</summary>
+    private ValidationProblemDetails Incompatible(RelationIncompatibleException exception)
+    {
+        var problem = new ValidationProblemDetails(new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["type"] = [messages["RelationIncompatible", exception.SourceType, exception.RelationType, exception.TargetType]],
+        })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["RelationRefusedTitle"],
+        };
+
+        problem.Extensions["allowedTargets"] = exception.AllowedTargets;
+
+        return problem;
+    }
+
+    private ValidationProblemDetails CrossProject(RelationCrossProjectException exception) =>
+        new(new Dictionary<string, string[]>(StringComparer.Ordinal) { ["targetId"] = [messages["RelationCrossProject"]] })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["RelationRefusedTitle"],
+            Detail = messages["RelationCrossProjectDetail", exception.SourceId, exception.TargetId],
+        };
+
+    private ValidationProblemDetails SelfReference(RelationSelfReferenceException exception) =>
+        new(new Dictionary<string, string[]>(StringComparer.Ordinal) { ["targetId"] = [messages["RelationSelfReference"]] })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["RelationRefusedTitle"],
+            Detail = messages["RelationSelfReferenceDetail", exception.ArtifactId],
+        };
+
+    private ValidationProblemDetails UnknownRelationType(RelationTypeUnknownException exception) =>
+        new(new Dictionary<string, string[]>(StringComparer.Ordinal) { ["type"] = [messages["RelationTypeUnknown", exception.RelationType]] })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["RelationRefusedTitle"],
+        };
+
+    private ProblemDetails Duplicate(RelationAlreadyExistsException exception) => new()
+    {
+        Status = StatusCodes.Status409Conflict,
+        Title = messages["RelationDuplicateTitle"],
+        Detail = messages["RelationDuplicate", exception.RelationType],
+    };
+
+    private ValidationProblemDetails LevelsOutOfRange(RelationLevelsOutOfRangeException exception) =>
+        new(new Dictionary<string, string[]>(StringComparer.Ordinal) { ["levels"] = [messages["RelationLevels", exception.MaxLevels]] })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["RelationRefusedTitle"],
+        };
+
+    private ProblemDetails RelationNotFound() => new()
+    {
+        Status = StatusCodes.Status404NotFound,
+        Title = messages["Status404Title"],
+        Detail = messages["RelationNotFound"],
+    };
 
     private ProblemDetails UpgradeUnavailable(ArtifactSchemaUpgradeUnavailableException exception) => new()
     {
