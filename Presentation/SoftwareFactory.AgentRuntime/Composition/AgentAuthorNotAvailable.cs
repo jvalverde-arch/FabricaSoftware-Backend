@@ -14,4 +14,9 @@ internal sealed class AgentAuthorNotAvailable : IArtifactAuthorContext
     public Guid AuthorId =>
         throw new InvalidOperationException(
             "The worker has no agent identity yet: artifact authorship for agents arrives with S4 (sprint-01 HU-001 is human-authored).");
+
+    /// <summary>A substitute agent wears exactly one role — the one it stands in for — and it arrives with S4 too.</summary>
+    public IReadOnlyCollection<Role> Roles =>
+        throw new InvalidOperationException(
+            "The worker has no agent identity yet: the role a substitute agent stands in for arrives with S4.");
 }

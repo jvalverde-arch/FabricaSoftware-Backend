@@ -247,6 +247,8 @@ public sealed class ArtifactLifecycleTests(PostgresFixture fixture) : IAsyncLife
         public AuthorType AuthorType => AuthorType.Human;
 
         public Guid AuthorId { get; } = userId;
+
+        public IReadOnlyCollection<Role> Roles { get; } = [Role.Functional];
     }
 
     private sealed class FixedClient : Application.Common.Security.IClientContext

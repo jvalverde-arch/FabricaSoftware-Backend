@@ -29,6 +29,14 @@ public sealed class SoftwareFactoryDbContext(DbContextOptions<SoftwareFactoryDbC
 
     public DbSet<Decision> Decisions => Set<Decision>();
 
+    public DbSet<DecisionArtifact> DecisionArtifacts => Set<DecisionArtifact>();
+
+    public DbSet<DecisionAuthorRole> DecisionAuthorRoles => Set<DecisionAuthorRole>();
+
+    public DbSet<DecisionCompetentRole> DecisionCompetentRoles => Set<DecisionCompetentRole>();
+
+    public DbSet<ArtifactTypeRole> ArtifactTypeRoles => Set<ArtifactTypeRole>();
+
     public DbSet<LlmCall> LlmCalls => Set<LlmCall>();
 
     public DbSet<SourceDocument> SourceDocuments => Set<SourceDocument>();

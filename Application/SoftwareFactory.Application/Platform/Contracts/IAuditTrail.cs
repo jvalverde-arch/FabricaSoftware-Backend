@@ -21,4 +21,7 @@ public enum AuditedAction
     ArtifactDeleted,
     RelationCreated,
     RelationDeleted,
+    DecisionRecorded,
+    DecisionRatified,
+    DecisionReverted,
 }

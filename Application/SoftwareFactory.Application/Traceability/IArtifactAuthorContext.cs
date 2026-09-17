@@ -11,4 +11,11 @@ public interface IArtifactAuthorContext
     AuthorType AuthorType { get; }
 
     Guid AuthorId { get; }
+
+    /// <summary>
+    /// Every role the author holds right now (plural: a person may wear several hats, a substitute agent wears
+    /// exactly one — the role it stands in for). The decision log stores them as a snapshot and subtracts all of
+    /// them when it works out who is competent (HU-003 §1-2).
+    /// </summary>
+    IReadOnlyCollection<Role> Roles { get; }
 }

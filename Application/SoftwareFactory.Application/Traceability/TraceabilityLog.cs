@@ -29,6 +29,18 @@ internal static partial class TraceabilityLog
     [LoggerMessage(EventId = 5011, Level = LogLevel.Information, Message = "Relation {RelationId} of type {RelationType} deleted.")]
     public static partial void RelationDeleted(this ILogger logger, Guid relationId, string relationType);
 
+    [LoggerMessage(EventId = 5020, Level = LogLevel.Information, Message = "Decision {DecisionId} recorded as {DecisionType}; {CompetentRoleCount} role(s) may settle it.")]
+    public static partial void DecisionRecorded(this ILogger logger, Guid decisionId, string decisionType, int competentRoleCount);
+
+    [LoggerMessage(EventId = 5021, Level = LogLevel.Information, Message = "Note {DecisionId} settled as {State} by decision {ChildId}.")]
+    public static partial void DecisionClosed(this ILogger logger, Guid decisionId, string state, Guid childId);
+
+    [LoggerMessage(EventId = 5022, Level = LogLevel.Warning, Message = "Refused to settle note {DecisionId}: the caller failed the {Guard} check.")]
+    public static partial void DecisionCloseRefused(this ILogger logger, Guid decisionId, string guard);
+
+    [LoggerMessage(EventId = 5023, Level = LogLevel.Error, Message = "The competence map of the tenant has no role for the artifact type(s) {ArtifactTypes}; the decision log fails closed until it is completed.")]
+    public static partial void CompetenceMapIncomplete(this ILogger logger, string artifactTypes);
+
     [LoggerMessage(EventId = 5012, Level = LogLevel.Warning, Message = "Relation refused by the compatibility matrix: a '{SourceType}' cannot '{RelationType}' a '{TargetType}'.")]
     public static partial void RelationRefused(this ILogger logger, string sourceType, string relationType, string targetType);
 }

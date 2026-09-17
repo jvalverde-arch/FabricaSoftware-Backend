@@ -30,6 +30,8 @@ public static class TraceabilityServiceCollectionExtensions
         services.AddScoped<IArtifactService, ArtifactService>();
         services.AddScoped<IRelationRepository, RelationRepository>();
         services.AddScoped<IRelationService, RelationService>();
+        services.AddScoped<IDecisionRepository, DecisionRepository>();
+        services.AddScoped<IDecisionService, DecisionService>();
 
         return services;
     }

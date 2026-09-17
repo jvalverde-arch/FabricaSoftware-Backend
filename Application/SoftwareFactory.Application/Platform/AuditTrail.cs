@@ -19,6 +19,9 @@ public sealed class AuditTrail(IAuditEventRepository events, IClientContext clie
         AuditedAction.ArtifactDeleted => AuditAction.ArtifactDeleted,
         AuditedAction.RelationCreated => AuditAction.RelationCreated,
         AuditedAction.RelationDeleted => AuditAction.RelationDeleted,
+        AuditedAction.DecisionRecorded => AuditAction.DecisionRecorded,
+        AuditedAction.DecisionRatified => AuditAction.DecisionRatified,
+        AuditedAction.DecisionReverted => AuditAction.DecisionReverted,
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Unknown audited action."),
     };
 }

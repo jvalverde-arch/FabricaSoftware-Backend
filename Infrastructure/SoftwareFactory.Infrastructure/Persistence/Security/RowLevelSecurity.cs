@@ -51,7 +51,10 @@ internal static class RowLevelSecurity
     /// <summary>Tables added by the authentication migration (T-004). Frozen for the same reason.</summary>
     public static IReadOnlyList<string> AuthTables { get; } = ["refresh_token", AuditTable];
 
-    public static IReadOnlyList<string> TenantScopedTables { get; } = [.. InitialTenantScopedTables, .. AuthTables];
+    /// <summary>Tables added by the decision log (HU-003). Frozen for the same reason.</summary>
+    public static IReadOnlyList<string> DecisionLogTables { get; } = ["decision_artifact", "decision_author_role", "decision_competent_role", "artifact_type_role"];
+
+    public static IReadOnlyList<string> TenantScopedTables { get; } = [.. InitialTenantScopedTables, .. AuthTables, .. DecisionLogTables];
 
     public static IReadOnlyList<string> AllTables { get; } = [TenantTable, .. TenantScopedTables];
 
@@ -123,6 +126,33 @@ internal static class RowLevelSecurity
                 USING ({CurrentTenantFunction}() IS NULL
                        AND normalized_email = NULLIF(current_setting('{LoginEmailSetting}', true), ''));
             """);
+
+        return sql.ToString();
+    }
+
+    /// <summary>Isolation on the tables the decision log adds (HU-003): the same forced policy as every other table.</summary>
+    public static string EnableDecisionLogSql()
+    {
+        var sql = new StringBuilder();
+
+        foreach (var table in DecisionLogTables)
+        {
+            sql.AppendLine(PolicySql(table, "tenant_id"));
+        }
+
+        return sql.ToString();
+    }
+
+    public static string DisableDecisionLogSql()
+    {
+        var sql = new StringBuilder();
+
+        foreach (var table in DecisionLogTables)
+        {
+            sql.AppendLine(CultureInfo.InvariantCulture, $"DROP POLICY IF EXISTS {PolicyName} ON {table};");
+            sql.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE {table} NO FORCE ROW LEVEL SECURITY;");
+            sql.AppendLine(CultureInfo.InvariantCulture, $"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;");
+        }
 
         return sql.ToString();
     }
