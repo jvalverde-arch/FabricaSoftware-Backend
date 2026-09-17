@@ -20,6 +20,7 @@ public sealed class DecisionServiceTests
     private static readonly DateTimeOffset _now = new(2026, 9, 17, 10, 0, 0, TimeSpan.Zero);
     private static readonly Guid _tenantId = Guid.CreateVersion7();
     private static readonly Guid _projectId = Guid.CreateVersion7();
+    private static readonly Guid _otherProjectId = Guid.CreateVersion7();
 
     [Fact]
     public async Task An_author_competent_for_what_they_touched_records_a_decision_that_is_born_closed()
@@ -208,6 +209,47 @@ public sealed class DecisionServiceTests
     }
 
     [Fact]
+    public async Task A_decision_cannot_bear_on_an_artifact_of_another_project()
+    {
+        var harness = new Harness(Role.Functional);
+        var stranger = harness.Artifact("user_story", "Historia de otro proyecto", _otherProjectId);
+
+        // The decision is filed under a project: letting it speak about another project's artifact would file the
+        // judgement where nobody looking at that artifact will ever find it (HU-003 §5).
+        var exception = await Assert.ThrowsAsync<ArtifactValidationException>(
+            () => harness.Service.RecordAsync(
+                new RecordDecisionCommand(_projectId, [stranger.Id], "Opino del proyecto de al lado."),
+                CancellationToken.None));
+
+        var error = Assert.Single(exception.Errors);
+        Assert.Equal("artifactIds", error.Path);
+
+        // Naming the artifact is what tells this refusal apart from the empty-list one, which shares the field.
+        Assert.Contains(stranger.Id.ToString(), error.Message, StringComparison.Ordinal);
+        Assert.Empty(harness.Decisions.Decisions);
+        Assert.Equal(0, harness.UnitOfWork.Commits);
+    }
+
+    [Fact]
+    public async Task A_decision_may_bear_on_a_global_artifact_of_another_project()
+    {
+        var harness = new Harness(Role.Functional);
+        var contract = harness.Artifact("boundary_contract", "Cobros v1", _otherProjectId, ArtifactLevel.Global);
+
+        var note = await harness.Service.RecordAsync(
+            new RecordDecisionCommand(_projectId, [contract.Id], "Vamos a consumir este contrato."),
+            CancellationToken.None);
+
+        // What the tenant shares crosses projects — the same line HU-002 §6 draws for relations. It answers to the
+        // architect, so the functional author leaves it pending, which is the rule of §2 working on top of §5.
+        Assert.Equal(_projectId, note.ProjectId);
+        Assert.Equal([contract.Id], note.ArtifactIds);
+        Assert.Equal(DecisionNames.OutOfRoleNote, note.Type);
+        Assert.Equal(["architect"], note.CompetentRoles);
+    }
+
+    /// <summary>The third case of the scope rule (HU-003 §5): a decision that moved nothing is not a decision.</summary>
+    [Fact]
     public async Task A_decision_that_bears_on_nothing_is_refused()
     {
         var harness = new Harness(Role.Functional);
@@ -301,9 +343,9 @@ public sealed class DecisionServiceTests
 
         public FakeUnitOfWork UnitOfWork { get; } = new();
 
-        public Artifact Artifact(string type, string title)
+        public Artifact Artifact(string type, string title, Guid? projectId = null, ArtifactLevel level = ArtifactLevel.Project)
         {
-            var artifact = new Artifact(_tenantId, _projectId, type, title, ArtifactLevel.Project);
+            var artifact = new Artifact(_tenantId, projectId ?? _projectId, type, title, level);
             Artifacts.Artifacts.Add(artifact);
             return artifact;
         }
