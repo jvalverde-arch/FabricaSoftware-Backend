@@ -95,6 +95,31 @@ internal sealed class TraceabilityExceptionHandler(IProblemDetailsService proble
             return RelationNotFound();
         }
 
+        if (exception is DecisionNotFoundException)
+        {
+            return DecisionNotFound();
+        }
+
+        if (exception is DecisionNotPendingException settled)
+        {
+            return AlreadySettled(settled);
+        }
+
+        if (exception is DecisionRoleNotCompetentException notCompetent)
+        {
+            return NotCompetent(notCompetent);
+        }
+
+        if (exception is SelfRatificationException)
+        {
+            return SelfRatification();
+        }
+
+        if (exception is ArtifactTypeWithoutCompetentRoleException unmapped)
+        {
+            return WithoutCompetentRole(unmapped);
+        }
+
         return exception is ArtifactSchemaUpgradeUnavailableException upgrade ? UpgradeUnavailable(upgrade) : null;
     }
 
@@ -203,6 +228,67 @@ internal sealed class TraceabilityExceptionHandler(IProblemDetailsService proble
         Title = messages["Status404Title"],
         Detail = messages["RelationNotFound"],
     };
+
+    private ProblemDetails DecisionNotFound() => new()
+    {
+        Status = StatusCodes.Status404NotFound,
+        Title = messages["Status404Title"],
+        Detail = messages["DecisionNotFound"],
+    };
+
+    private ProblemDetails AlreadySettled(DecisionNotPendingException exception) => new()
+    {
+        Status = StatusCodes.Status409Conflict,
+        Title = messages["DecisionNotPendingTitle"],
+        Detail = messages["DecisionNotPending", exception.State],
+    };
+
+    /// <summary>403 and not 422: the note is fine, it is this caller who may not close it (HU-003 §4).</summary>
+    private ProblemDetails NotCompetent(DecisionRoleNotCompetentException exception)
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status403Forbidden,
+            Title = messages["Status403Title"],
+            Detail = messages["DecisionRoleNotCompetent", string.Join(", ", exception.CompetentRoles)],
+        };
+
+        problem.Extensions["competentRoles"] = exception.CompetentRoles;
+
+        return problem;
+    }
+
+    private ProblemDetails SelfRatification()
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status403Forbidden,
+            Title = messages["Status403Title"],
+            Detail = messages["DecisionSelfRatification"],
+        };
+
+        // The code travels so the caller can tell the two 403 of this endpoint apart (HU-003 §4).
+        problem.Extensions["code"] = "self_ratification";
+
+        return problem;
+    }
+
+    private ValidationProblemDetails WithoutCompetentRole(ArtifactTypeWithoutCompetentRoleException exception)
+    {
+        var problem = new ValidationProblemDetails(new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["artifactIds"] = [messages["ArtifactTypeWithoutCompetentRole", string.Join(", ", exception.ArtifactTypes)]],
+        })
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = messages["ArtifactTypeWithoutCompetentRoleTitle"],
+        };
+
+        problem.Extensions["code"] = "artifact_type_without_competent_role";
+        problem.Extensions["artifactTypes"] = exception.ArtifactTypes;
+
+        return problem;
+    }
 
     private ProblemDetails UpgradeUnavailable(ArtifactSchemaUpgradeUnavailableException exception) => new()
     {

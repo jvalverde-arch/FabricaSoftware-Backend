@@ -10,7 +10,7 @@ using SoftwareFactory.Infrastructure.Security;
 
 namespace SoftwareFactory.Infrastructure.Tests.Persistence;
 
-/// <summary>Arranges one row (two for artifact) in every table for a fresh tenant, through the owner connection. The probe user signs in with <see cref="Password"/>.</summary>
+/// <summary>Arranges one row (two for artifact, the whole competence map for artifact_type_role) in every table for a fresh tenant, through the owner connection. The probe user signs in with <see cref="Password"/>.</summary>
 internal static class TenantGraph
 {
     public const string Password = "Probe-Password-2026!";
@@ -32,7 +32,14 @@ internal static class TenantGraph
         var testCase = new Artifact(tenant.Id, project.Id, "test_case", "Login works", ArtifactLevel.Project);
         var version = new ArtifactVersion(tenant.Id, story.Id, story.AdvanceVersion(DateTimeOffset.UtcNow), """{"title":"As a user"}""", schemaVersion: 1, AuthorType.Human, user.Id);
         var relation = new Relation(tenant.Id, testCase.Id, story.Id, "validates", """{"note":"probe"}""", AuthorType.Agent, user.Id);
-        var decision = new Decision(tenant.Id, project.Id, DecisionType.Decision, AuthorType.Human, user.Id, Role.Functional, "Because the probe says so.", null);
+        // A note out of the author's competence (HU-003): it carries rows in all four tables of the decision log.
+        var decision = Decision.Record(tenant.Id, project.Id, AuthorType.Human, user.Id, "Because the probe says so.", [Role.Architect]);
+        var decisionArtifact = new DecisionArtifact(tenant.Id, decision.Id, story.Id);
+        var decisionAuthorRole = new DecisionAuthorRole(tenant.Id, decision.Id, Role.Functional);
+        var decisionCompetentRole = new DecisionCompetentRole(tenant.Id, decision.Id, Role.Architect);
+        var competenceMap = ArtifactTypeRoleSeed.Base
+            .Select(pair => new ArtifactTypeRole(tenant.Id, pair.ArtifactType, pair.Role))
+            .ToList();
         var job = new Job(tenant.Id, "probe", """{"n":1}""");
         var call = new LlmCall(tenant.Id, job.Id, "stub", "stub-small", 10, 5, 0, 0, 120, 0.000123m);
         var document = new SourceDocument(tenant.Id, "Norma", "text/plain", $"{slug}/norma.txt", 42, "https://example.test/norma");
@@ -42,6 +49,8 @@ internal static class TenantGraph
         var auditEvent = new AuditEvent(tenant.Id, AuditAction.LoginSucceeded, AuthorType.Human, user.Id, new AuditClient("127.0.0.1", "probe"), DateTimeOffset.UtcNow);
 
         admin.AddRange(tenant, user, role, project, story, testCase, version, relation, decision, job, call, document, chunk, refreshToken, auditEvent);
+        admin.AddRange(decisionArtifact, decisionAuthorRole, decisionCompetentRole);
+        admin.AddRange(competenceMap);
         await admin.SaveChangesAsync();
 
         return tenant.Id;

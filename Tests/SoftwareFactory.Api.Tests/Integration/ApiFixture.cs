@@ -119,6 +119,14 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
     }
 
     /// <summary>Project of the seeded «local» tenant, where the artifact tests put their model.</summary>
+    /// <summary>Gives an existing user one more role, to exercise what happens when somebody is promoted (HU-003 §4).</summary>
+    public async Task GrantRoleAsync(Guid userId, Role role)
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        context.UserRoles.Add(new UserRole(SeedOptions.LocalTenantId, userId, role));
+        await context.SaveChangesAsync();
+    }
+
     public async Task<Guid> LocalProjectIdAsync()
     {
         await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));

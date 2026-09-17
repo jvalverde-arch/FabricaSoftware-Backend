@@ -10,4 +10,7 @@ internal sealed class ArtifactAuthorFromCurrentUser(ICurrentUser currentUser) : 
     public AuthorType AuthorType => AuthorType.Human;
 
     public Guid AuthorId => currentUser.UserId;
+
+    /// <summary>Every role of the token: the decision log subtracts all of them, not one chosen for the person.</summary>
+    public IReadOnlyCollection<Role> Roles => currentUser.Roles;
 }

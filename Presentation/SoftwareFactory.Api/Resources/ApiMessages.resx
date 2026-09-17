@@ -44,4 +44,12 @@
   <data name="RelationDuplicate" xml:space="preserve"><value>Ya hay una relación «{0}» entre esos dos artefactos.</value></data>
   <data name="RelationLevels" xml:space="preserve"><value>El vecindario va de 1 a {0} niveles.</value></data>
   <data name="RelationNotFound" xml:space="preserve"><value>La relación no existe o no pertenece a tu organización.</value></data>
+  <data name="DecisionNotFound" xml:space="preserve"><value>La decisión no existe o no pertenece a tu organización.</value></data>
+  <data name="DecisionRefusedTitle" xml:space="preserve"><value>Decisión no válida</value></data>
+  <data name="DecisionNotPendingTitle" xml:space="preserve"><value>La nota ya está cerrada</value></data>
+  <data name="DecisionNotPending" xml:space="preserve"><value>Esta nota está en «{0}» y ya no espera a nadie.</value></data>
+  <data name="DecisionRoleNotCompetent" xml:space="preserve"><value>Esta nota solo la puede cerrar quien tenga uno de estos roles: {0}.</value></data>
+  <data name="DecisionSelfRatification" xml:space="preserve"><value>Nadie cierra su propia nota, ni aunque después haya obtenido el rol competente.</value></data>
+  <data name="ArtifactTypeWithoutCompetentRole" xml:space="preserve"><value>La configuración de tu organización no tiene rol competente para el tipo de artefacto «{0}», así que la decisión no se registra: una nota sin nadie que pueda ratificarla es peor que un rechazo.</value></data>
+  <data name="ArtifactTypeWithoutCompetentRoleTitle" xml:space="preserve"><value>Configuración de competencias incompleta</value></data>
 </root>

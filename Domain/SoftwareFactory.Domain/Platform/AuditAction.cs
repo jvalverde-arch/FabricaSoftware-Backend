@@ -17,4 +17,9 @@ public enum AuditAction
     ArtifactDeleted,
     RelationCreated,
     RelationDeleted,
+
+    // Traceability (S1): the decision log records the judgement, the audit trail records that it happened (HU-003 §6).
+    DecisionRecorded,
+    DecisionRatified,
+    DecisionReverted,
 }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Domain.Common;
 using SoftwareFactory.Domain.Platform;
+using SoftwareFactory.Domain.Traceability;
 using SoftwareFactory.Infrastructure.Persistence.Options;
 using SoftwareFactory.Infrastructure.Persistence.Security;
 
@@ -55,8 +56,39 @@ public sealed class DatabaseSeeder(IPasswordHasher passwordHasher, IOptions<Seed
                 await EnsureAdminAsync(context, tenantId, seed, cancellationToken).ConfigureAwait(false);
             }
 
+            await EnsureCompetenceMapAsync(context, tenantId, cancellationToken).ConfigureAwait(false);
+
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Gives the tenant the base competence map of HU-003 §3 if it has none. The migration seeds the tenants that
+    /// already existed; a tenant born after it — today only this one — gets it here, because a tenant without a map
+    /// cannot record a single decision (the log fails closed on an unmapped type).
+    /// </summary>
+    private static async Task EnsureCompetenceMapAsync(SoftwareFactoryDbContext context, Guid tenantId, CancellationToken cancellationToken)
+    {
+        // The rows are compared in memory on purpose: the role is stored through a value converter, so building the
+        // comparison key in SQL would compare 'functional' against 'Functional' and seed the map twice.
+        var mapped = await context.ArtifactTypeRoles
+            .Select(map => new { map.ArtifactType, map.Role })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var missing = ArtifactTypeRoleSeed.Base
+            .Where(pair => !mapped.Any(existing =>
+                string.Equals(existing.ArtifactType, pair.ArtifactType, StringComparison.Ordinal) && existing.Role == pair.Role))
+            .Select(pair => new ArtifactTypeRole(tenantId, pair.ArtifactType, pair.Role))
+            .ToList();
+
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        context.ArtifactTypeRoles.AddRange(missing);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task EnsureAdminAsync(SoftwareFactoryDbContext context, Guid tenantId, SeedOptions seed, CancellationToken cancellationToken)
