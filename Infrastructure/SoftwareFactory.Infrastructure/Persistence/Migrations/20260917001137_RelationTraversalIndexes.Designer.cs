@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using SoftwareFactory.Infrastructure.Persistence;
 namespace SoftwareFactory.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SoftwareFactoryDbContext))]
-    partial class SoftwareFactoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917001137_RelationTraversalIndexes")]
+    partial class RelationTraversalIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

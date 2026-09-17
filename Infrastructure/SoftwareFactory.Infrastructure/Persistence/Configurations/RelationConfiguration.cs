@@ -24,8 +24,13 @@ internal sealed class RelationConfiguration : TenantScopedConfiguration<Relation
 
         // Invariant of the model plus the two traversal directions of the neighborhood query (sprint-01, HU-002).
         builder.HasIndex(relation => new { relation.SourceId, relation.TargetId, relation.Type }).IsUnique();
-        builder.HasIndex(relation => relation.SourceId);
-        builder.HasIndex(relation => relation.TargetId);
-        builder.HasIndex(relation => relation.TenantId);
+
+        // Tenant first, then the endpoint: row-level security adds tenant_id to every predicate, so a composite index
+        // answers the policy and the hop in a single scan. Measured on the graph of HU-002 (10k artifacts, 50k
+        // relations): with single-column indexes the planner intersects a bitmap of the whole tenant with each
+        // endpoint index and the three-level walk costs ~250 ms; with these it costs a few. A tenant-only query still
+        // uses them by prefix, so the standalone tenant index is gone.
+        builder.HasIndex(relation => new { relation.TenantId, relation.SourceId });
+        builder.HasIndex(relation => new { relation.TenantId, relation.TargetId });
     }
 }

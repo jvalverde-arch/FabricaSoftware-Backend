@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "_comment": "Matriz de compatibilidad tipo-origen x tipo-relacion x tipo-destino (sprint-01 HU-002 §1). Es datos, no código: agregar una combinación es editar este archivo, no tocar el servicio.",
+  "rules": [
+    {
+      "relation": "belongs_to",
+      "sources": [
+        "module", "user_story", "functional_requirement", "non_functional_requirement", "business_rule",
+        "use_case", "screen", "actor", "api", "data_entity", "architecture_component", "adr",
+        "compliance_requirement", "test_case"
+      ],
+      "targets": ["module"]
+    },
+    {
+      "relation": "implements",
+      "sources": ["user_story"],
+      "targets": ["functional_requirement", "use_case"]
+    },
+    {
+      "relation": "implements",
+      "sources": ["screen"],
+      "targets": ["user_story", "use_case"]
+    },
+    {
+      "relation": "implements",
+      "sources": ["api"],
+      "targets": ["use_case", "boundary_contract"]
+    },
+    {
+      "relation": "implements",
+      "sources": ["architecture_component"],
+      "targets": ["non_functional_requirement", "functional_requirement"]
+    },
+    {
+      "relation": "validates",
+      "sources": ["test_case"],
+      "targets": [
+        "user_story", "functional_requirement", "non_functional_requirement", "business_rule",
+        "use_case", "screen", "api", "compliance_requirement"
+      ]
+    },
+    {
+      "relation": "depends_on",
+      "sources": ["module"],
+      "targets": ["module"]
+    },
+    {
+      "relation": "depends_on",
+      "sources": ["architecture_component"],
+      "targets": ["architecture_component", "data_entity", "api"]
+    },
+    {
+      "relation": "depends_on",
+      "sources": ["user_story"],
+      "targets": ["user_story"]
+    },
+    {
+      "relation": "depends_on",
+      "sources": ["api"],
+      "targets": ["data_entity"]
+    },
+    {
+      "relation": "depends_on",
+      "sources": ["data_entity"],
+      "targets": ["data_entity"]
+    },
+    {
+      "relation": "affects",
+      "sources": ["adr"],
+      "targets": [
+        "module", "architecture_component", "api", "data_entity",
+        "non_functional_requirement", "boundary_contract"
+      ]
+    },
+    {
+      "relation": "affects",
+      "sources": ["business_rule"],
+      "targets": ["functional_requirement", "use_case", "user_story", "data_entity", "screen"]
+    },
+    {
+      "relation": "affects",
+      "sources": ["compliance_requirement"],
+      "targets": ["module", "api", "data_entity", "non_functional_requirement", "architecture_component"]
+    },
+    {
+      "relation": "derives_from",
+      "sources": ["functional_requirement"],
+      "targets": ["use_case", "business_rule", "compliance_requirement"]
+    },
+    {
+      "relation": "derives_from",
+      "sources": ["non_functional_requirement"],
+      "targets": ["compliance_requirement"]
+    },
+    {
+      "relation": "derives_from",
+      "sources": ["user_story"],
+      "targets": ["functional_requirement"]
+    },
+    {
+      "relation": "derives_from",
+      "sources": ["use_case"],
+      "targets": ["actor"]
+    },
+    {
+      "relation": "derives_from",
+      "sources": ["test_case"],
+      "targets": ["test_case"]
+    },
+    {
+      "relation": "exposes",
+      "sources": ["module"],
+      "targets": ["boundary_contract"]
+    },
+    {
+      "relation": "consumes",
+      "sources": ["module"],
+      "targets": ["boundary_contract"]
+    }
+  ]
+}

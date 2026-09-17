@@ -19,4 +19,6 @@ public enum AuditedAction
     ArtifactUpdated,
     ArtifactStateChanged,
     ArtifactDeleted,
+    RelationCreated,
+    RelationDeleted,
 }
