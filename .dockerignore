@@ -1,7 +1,8 @@
 # Build context (estandar-backend.md §7): only what is needed to restore and publish reaches the daemon.
 **/bin/
 **/obj/
-**/artifacts/
+# Anclado a la raíz, por lo mismo que en .gitignore: un patrón suelto se come cualquier carpeta que se llame así.
+/artifacts/
 **/TestResults/
 .git/
 .github/
