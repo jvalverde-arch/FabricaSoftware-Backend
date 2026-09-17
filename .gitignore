@@ -1,7 +1,10 @@
 # .NET
 bin/
 obj/
-artifacts/
+# Anclado a la raíz a propósito: sin la barra inicial el patrón vale a cualquier profundidad y, como en macOS
+# git corre con core.ignorecase=true, también ignoraba Presentation/.../Contracts/Artifacts/. Dos archivos
+# fuente vivieron solo en el disco y el CI llevaba cuatro corridas rojas sin que se notara en local.
+/artifacts/
 TestResults/
 *.user
 *.suo
