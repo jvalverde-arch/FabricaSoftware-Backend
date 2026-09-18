@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using SoftwareFactory.Application.Common.Persistence;
 using SoftwareFactory.Application.Project;
 using SoftwareFactory.Application.Project.Contracts;
 using SoftwareFactory.Application.Tests.Finops.Fakes;
 using SoftwareFactory.Application.Tests.Platform.Fakes;
 using SoftwareFactory.Application.Tests.Project.Fakes;
+using SoftwareFactory.Domain.Project;
 
 namespace SoftwareFactory.Application.Tests.Project;
 
@@ -60,13 +62,28 @@ public sealed class ProjectServiceTests
 
         // Nobody has the name when the courtesy check runs, and the index refuses the write anyway: that is exactly
         // what a second caller sees when two creates interleave (estandar-backend.md §4).
-        harness.UnitOfWork.RefusedByIndex = "ux_project_tenant_id_name";
+        harness.UnitOfWork.RefusedByIndex = SoftwareProject.UniqueNameIndex;
 
         var exception = await Assert.ThrowsAsync<ProjectNameTakenException>(
             () => harness.Service.CreateAsync(new CreateProjectCommand("Cobranzas", null), CancellationToken.None));
 
         Assert.Equal("Cobranzas", exception.Name);
         Assert.Equal(0, harness.UnitOfWork.Commits);
+    }
+
+    [Fact]
+    public async Task A_violation_of_another_index_is_not_dressed_up_as_a_name_conflict()
+    {
+        var harness = new Harness();
+
+        // The day this table — or anything else travelling in the same SaveChanges — grows a second unique index,
+        // a blind catch would answer «that name is taken» about a field nobody touched (estandar-backend.md §4).
+        harness.UnitOfWork.RefusedByIndex = "ux_project_something_else";
+
+        var exception = await Assert.ThrowsAsync<UniqueConstraintViolationException>(
+            () => harness.Service.CreateAsync(new CreateProjectCommand("Cobranzas", null), CancellationToken.None));
+
+        Assert.Equal("ux_project_something_else", exception.ConstraintName);
     }
 
     [Fact]

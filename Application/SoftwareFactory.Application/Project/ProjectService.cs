@@ -46,8 +46,11 @@ public sealed class ProjectService(
             await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (UniqueConstraintViolationException exception)
+            when (string.Equals(exception.ConstraintName, SoftwareProject.UniqueNameIndex, StringComparison.Ordinal))
         {
-            // The write that lost the race gets the same answer as the one that asked first, not a 500.
+            // Discriminated by index name, and anything else is left to travel (estandar-backend.md §4): a blind
+            // catch works while the table has one unique index and, when the second arrives, starts answering «that
+            // name is taken» about a field nobody touched.
             logger.ProjectNameRaceLost(name);
             throw new ProjectNameTakenException(name, exception);
         }

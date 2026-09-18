@@ -59,7 +59,7 @@ public sealed class ProjectServiceTests(PostgresFixture fixture) : IAsyncLifetim
 
         Assert.Equal(1, results.Count(refusal => refusal is null));
         var refused = Assert.Single(results.OfType<UniqueConstraintViolationException>());
-        Assert.Contains("project", refused.ConstraintName, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(SoftwareProject.UniqueNameIndex, refused.ConstraintName);
 
         await using var fresh = fixture.CreateAppContext(_tenantId);
         Assert.Equal(1, await fresh.Projects.CountAsync(project => project.Name == "Tesorería"));
