@@ -6,6 +6,9 @@ using SoftwareFactory.Application.Common.Security;
 using SoftwareFactory.Application.Common.Tenancy;
 using SoftwareFactory.Application.Finops.Contracts;
 using SoftwareFactory.Application.Platform.Contracts;
+using SoftwareFactory.Application.Project.Contracts;
+using SoftwareFactory.Application.Project;
+using SoftwareFactory.Domain.Project;
 using SoftwareFactory.Application.Traceability.Contracts;
 using SoftwareFactory.Domain.Finops;
 using SoftwareFactory.Domain.Platform;
@@ -57,6 +60,9 @@ public static class InfrastructureServiceCollectionExtensions
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .Validate(jwt => jwt.IsValid(), "Jwt settings are incomplete: Issuer, Audience, ActiveKeyId and SigningKeys (unique KeyId, Secret of 32+ characters, one of them the active key) are required.")
             .ValidateOnStart();
+
+        services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IProjectService, ProjectService>();
 
         services.AddSingleton<DatabaseConnectionStrings>();
         services.AddScoped<ScopedTenantContext>();

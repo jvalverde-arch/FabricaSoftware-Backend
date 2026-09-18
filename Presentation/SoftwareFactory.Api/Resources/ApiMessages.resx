@@ -52,4 +52,7 @@
   <data name="DecisionSelfRatification" xml:space="preserve"><value>Nadie cierra su propia nota, ni aunque después haya obtenido el rol competente.</value></data>
   <data name="ArtifactTypeWithoutCompetentRole" xml:space="preserve"><value>La configuración de tu organización no tiene rol competente para el tipo de artefacto «{0}», así que la decisión no se registra: una nota sin nadie que pueda ratificarla es peor que un rechazo.</value></data>
   <data name="ArtifactTypeWithoutCompetentRoleTitle" xml:space="preserve"><value>Configuración de competencias incompleta</value></data>
+  <data name="ProjectNotFound" xml:space="preserve"><value>El proyecto no existe o no pertenece a tu organización.</value></data>
+  <data name="ProjectNameTakenTitle" xml:space="preserve"><value>Ese nombre de proyecto ya existe</value></data>
+  <data name="ProjectNameTaken" xml:space="preserve"><value>Tu organización ya tiene un proyecto llamado «{0}». Elige otro nombre.</value></data>
 </root>
