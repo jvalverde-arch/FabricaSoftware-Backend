@@ -119,6 +119,20 @@ public sealed class ApiFixture : IAsyncLifetime, IAsyncDisposable
     }
 
     /// <summary>Project of the seeded «local» tenant, where the artifact tests put their model.</summary>
+    /// <summary>Creates a project belonging to a different tenant, to prove that no route of HU-007 ever shows it.</summary>
+    public async Task<Guid> CreateForeignProjectAsync(string name)
+    {
+        await using var context = new SoftwareFactoryDbContext(SoftwareFactoryDbContextOptions.Create(AdminConnectionString));
+        var tenant = new Tenant($"ajeno-{Guid.NewGuid():N}", $"ajeno-{Guid.NewGuid():N}");
+        context.Tenants.Add(tenant);
+
+        var project = new SoftwareProject(tenant.Id, name, "Proyecto de otro cliente");
+        context.Projects.Add(project);
+        await context.SaveChangesAsync();
+
+        return project.Id;
+    }
+
     /// <summary>Gives an existing user one more role, to exercise what happens when somebody is promoted (HU-003 §4).</summary>
     public async Task GrantRoleAsync(Guid userId, Role role)
     {
