@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SoftwareFactory.Application.Traceability;
@@ -267,6 +268,78 @@ public sealed class ProjectTreeTests(PostgresFixture fixture) : IAsyncLifetime
         Assert.DoesNotContain(root.Nodes, node => node.Id == module.Id);
         Assert.Empty(filtered.Nodes);
         Assert.Equal(0, filtered.MatchCount);
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public async Task The_filtered_mode_answers_under_200_ms_with_10k_artifacts()
+    {
+        await SeedSyntheticProjectAsync(artifacts: 10_000);
+
+        await using var context = fixture.CreateAppContext(_tenantId);
+        var service = Service(context);
+        var filter = new ProjectTreeQuery(_projectId) { Filter = new ProjectTreeFilter { Text = "Sintética 1" } };
+
+        // Warm the plan cache and the buffers: the number that matters is a query on a working system, not the first
+        // one after a bulk load.
+        await service.GetAsync(filter, CancellationToken.None);
+
+        var stopwatch = Stopwatch.StartNew();
+        var tree = await service.GetAsync(filter, CancellationToken.None);
+        stopwatch.Stop();
+
+        Assert.NotEmpty(tree.Nodes);
+        Assert.True(
+            stopwatch.ElapsedMilliseconds < 200,
+            $"The filtered mode took {stopwatch.ElapsedMilliseconds} ms over {tree.MatchCount} matches (the target of HU-004 is 200 ms).");
+    }
+
+    /// <summary>
+    /// Builds the synthetic project in the database itself: ten modules and the rest of the artifacts hanging off
+    /// them, so the filter has 10k titles to look through and the ancestor closure has a route to climb.
+    /// </summary>
+    private async Task SeedSyntheticProjectAsync(int artifacts)
+    {
+        await using var admin = fixture.CreateAdminContext();
+
+        // Bulk loading is not the measurement; it only has to finish.
+        admin.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+        var tenant = _tenantId.ToString("D");
+        await admin.Database.ExecuteSqlAsync($"SELECT set_config('app.tenant_id', {tenant}, false)");
+
+        await admin.Database.ExecuteSqlAsync($"""
+            INSERT INTO artifact (id, tenant_id, project_id, type, title, state, level, score, current_version, created_at, updated_at)
+            SELECT gen_random_uuid(), {_tenantId}, {_projectId}, 'module', 'Módulo sintético ' || n, 'draft', 'project', NULL, 0, now(), now()
+            FROM generate_series(1, 10) AS n
+            """);
+
+        await admin.Database.ExecuteSqlAsync($"""
+            INSERT INTO artifact (id, tenant_id, project_id, type, title, state, level, score, current_version, created_at, updated_at)
+            SELECT gen_random_uuid(), {_tenantId}, {_projectId}, 'user_story', 'Sintética ' || n, 'draft', 'project', NULL, 0, now(), now()
+            FROM generate_series(1, {artifacts - 10}) AS n
+            """);
+
+        await admin.Database.ExecuteSqlAsync($"""
+            WITH modules AS (
+                SELECT a.id, row_number() OVER (ORDER BY a.id) - 1 AS position, count(*) OVER () AS total
+                FROM artifact a
+                WHERE a.project_id = {_projectId} AND a.title LIKE 'Módulo sintético %'
+            ),
+            stories AS (
+                SELECT a.id, row_number() OVER (ORDER BY a.id) - 1 AS position
+                FROM artifact a
+                WHERE a.project_id = {_projectId} AND a.title LIKE 'Sintética %'
+            )
+            INSERT INTO relation (id, tenant_id, source_id, target_id, type, metadata, created_by_type, created_by, created_at)
+            SELECT gen_random_uuid(), {_tenantId}, stories.id, modules.id, 'belongs_to', NULL, 'human', {_userId}, now()
+            FROM stories
+            JOIN modules ON modules.position = stories.position % modules.total
+            ON CONFLICT DO NOTHING
+            """);
+
+        // Fresh statistics: right after a bulk load the planner still believes the tables are small and picks plans
+        // for a project that no longer exists. A real load ends the same way, with ANALYZE.
+        await admin.Database.ExecuteSqlRawAsync("ANALYZE artifact, relation");
     }
 
     private Task<ProjectTreeDto> ExpandAsync(SoftwareFactoryDbContext context, string node) =>
