@@ -37,7 +37,8 @@
             "description": "Tipo"
           },
           "required": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Si el atributo es obligatorio"
           },
           "description": {
             "type": "string",

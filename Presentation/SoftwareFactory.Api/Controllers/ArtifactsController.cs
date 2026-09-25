@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SoftwareFactory.Api.Contracts.Artifacts;
+using SoftwareFactory.Api.Contracts.Cards;
 using SoftwareFactory.Application.Traceability.Contracts;
 
 namespace SoftwareFactory.Api.Controllers;
@@ -11,7 +12,7 @@ namespace SoftwareFactory.Api.Controllers;
 [ApiController]
 [Route("api")]
 [Produces("application/json")]
-public sealed class ArtifactsController(IArtifactService artifacts) : ControllerBase
+public sealed class ArtifactsController(IArtifactService artifacts, IArtifactCardService cards) : ControllerBase
 {
     private const string GetRouteName = "GetArtifact";
 
@@ -93,6 +94,20 @@ public sealed class ArtifactsController(IArtifactService artifacts) : Controller
         var page = await artifacts.SearchAsync(filter, cancellationToken);
 
         return Ok(page.ToResponse());
+    }
+
+    /// <summary>
+    /// Everything the artifact card draws, in one call (HU-005). <paramref name="version"/> asks for one that is not
+    /// the current one; the schema that comes back is always that version's, never today's.
+    /// </summary>
+    [HttpGet("artifacts/{artifactId:guid}/card")]
+    [ProducesResponseType<ArtifactCardResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArtifactCardResponse>> GetCardAsync(Guid artifactId, [FromQuery] int? version, CancellationToken cancellationToken)
+    {
+        var card = await cards.GetAsync(new ArtifactCardQuery(artifactId) { Version = version }, cancellationToken);
+
+        return Ok(card.ToResponse());
     }
 
     [HttpGet("artifacts/{artifactId:guid}/versions")]
