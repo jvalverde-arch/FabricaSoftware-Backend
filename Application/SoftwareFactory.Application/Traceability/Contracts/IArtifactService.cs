@@ -24,6 +24,12 @@ public interface IArtifactService
 
     Task<IReadOnlyList<ArtifactVersionDto>> GetVersionsAsync(Guid artifactId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Content of one version, exactly as it was written and with the schema version it conforms to. The card of
+    /// HU-005 needs it to draw an old version against its own schema and not against today's.
+    /// </summary>
+    Task<ArtifactDetailDto> GetVersionAsync(Guid artifactId, int version, CancellationToken cancellationToken);
+
     Task<ArtifactDiffDto> GetDiffAsync(Guid artifactId, int fromVersion, int toVersion, CancellationToken cancellationToken);
 
     /// <summary>Logical delete; refused while relations point at the artifact.</summary>

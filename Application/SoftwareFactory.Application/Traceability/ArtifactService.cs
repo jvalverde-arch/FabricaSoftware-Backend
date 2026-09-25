@@ -170,6 +170,15 @@ public sealed class ArtifactService(
         ];
     }
 
+    public async Task<ArtifactDetailDto> GetVersionAsync(Guid artifactId, int version, CancellationToken cancellationToken)
+    {
+        var artifact = await RequireArtifactAsync(artifactId, cancellationToken).ConfigureAwait(false);
+        var found = await RequireVersionAsync(artifactId, version, cancellationToken).ConfigureAwait(false);
+
+        // Faithful to history, like GetAsync: never re-validated or reshaped against a newer schema.
+        return Detail(artifact, found);
+    }
+
     public async Task<ArtifactDiffDto> GetDiffAsync(Guid artifactId, int fromVersion, int toVersion, CancellationToken cancellationToken)
     {
         await RequireArtifactAsync(artifactId, cancellationToken).ConfigureAwait(false);
